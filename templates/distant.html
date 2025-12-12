@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Направления обучения (дистанционное)</title>
+
+    <!-- Подключение CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Подключение JS -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</head>
+<body>
+<div class="container">
+    <div class="back_container">
+        <a class="type_study_back" href="/">
+            <div class="type_study_button" >
+                <-
+            </div>
+        </a>
+    </div>
+    <div class="hh2">
+        <h2>Направления обучения</h2>
+    </div>
+    <a class="type_study_a" href="/distant/PB">
+        <div class="type_study_button" >
+            Пожарная безопасность
+        </div>
+    </a>
+
+    <a class="type_study_a" href="{{url_for('gochs')}}">
+        <div class="type_study_button" >
+            Программы ГО
+        </div>
+    </a>
+    <a class="type_study_a" href="/distant/112">
+        <div class="type_study_button" >
+            Программы 112
+        </div>
+    </a>
+</div>
+
+</body>
+</html>

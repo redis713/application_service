@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Агрегатор заявок на обучение</title>
+
+    <!-- Подключение CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Подключение JS -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</head>
+<body>
+<div class="container">
+
+    <div class="hh2">
+        <h2>Агрегатор заявок на обучение</h2>
+    </div>
+    <a class="type_study_a" href="{{url_for('ochnoe')}}">
+        <div class="type_study_button" >
+            Очно-заочное обучение
+        </div>
+    </a>
+
+    <a class="type_study_a" href="{{url_for('distant')}}">
+        <div class="type_study_button" >
+            Дистанционное обучение
+        </div>
+    </a>
+</div>
+
+</body>
+</html>
