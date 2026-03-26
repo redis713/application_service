@@ -1,3 +1,9 @@
+const NAME_REGEX = /^[А-ЯЁ][а-яё]+(?:[- ][А-ЯЁ][а-яё]+)*$/;
+const INN_REGEX = /^\d{10}$/;
+const OGRN_REGEX = /^\d{13}$/;
+const KPP_REGEX = /^\d{9}$/;
+const SNILS_REGEX = /^\d{11}$/;
+
 function addStudent() {
     const container = document.getElementById('students-container');
     const studentForm = container.children[0].cloneNode(true);
@@ -104,6 +110,78 @@ function removeStudent(button) {
         }
 }
 
+function validate_fio(fio) {
+    // функция проверки имени
+    if(!NAME_REGEX.test(fio))
+        return "ФИО должны начинаться с заглавной буквы и содержать только буквы, пробелы и тире!";
+}
+function validate_inn(inn) {
+    // функция проверки ИНН
+    if(!INN_REGEX.test(inn))
+        return "ИНН должен содержать только числа, не более 10!";
+}
+function validate_ogrn(ogrn) {
+// функция проверки ОГРН
+    if(!OGRN_REGEX.test(ogrn))
+        return "ОГРН должен содержать только числа, не более 13!";
+}
+function validate_snils(snils) {
+// функция проверки СНИЛС
+    if(!SNILS_REGEX.test(snils))
+        return "Снилс должен содержать только 11 цифр!";
+}
+function validate_kpp(kpp) {
+// функция проверки КПП
+    if(!KPP_REGEX.test(kpp))
+        return "КПП должен содержать только 9 цифр!";
+}
+
+
+function validateAll() {
+    const boss_firstname = document.getElementById('boss_firstname');
+    const boss_lastname = document.getElementById('boss_lastname');
+    const boss_patronymic = document.getElementById('boss_patronymic');
+    const ogrn = document.getElementById('ogrn');
+    const inn = document.getElementById('inn');
+    const kpp = document.getElementById('kpp');
+
+    let allValid = true;
+
+    let error = validate_fio(boss_firstname.value);
+    if (error) {
+        allValid = false;
+    }
+
+    error = validate_fio(boss_lastname.value);
+    if (error) {
+        allValid = false;
+    }
+
+    error = validate_fio(boss_patronymic.value);
+    if (error) {
+        allValid = false;
+    }
+
+    error = validate_ogrn(ogrn.value);
+    if (error) {
+        allValid = false;
+    }
+
+    error = validate_inn(inn.value);
+    if (error) {
+        allValid = false;
+    }
+
+    error = validate_kpp(kpp.value);
+    if (error) {
+        allValid = false;
+    }
+
+
+    return allValid;
+}
+
+
 function downloadDocx() {
    // Проверяем заполнение всех обязательных полей
    const form = document.querySelector('form');
@@ -122,6 +200,14 @@ function downloadDocx() {
        alert('Пожалуйста, заполните все обязательные поля');
        return;
    }
+
+   if (!validateAll())
+        alert("ошибки!!!!!!!!!!!!!!!!");
+
+
+
+
+
 
    //НАДО ДОПИСАТЬ СЮДА ВСЕ ПРОВЕРКИ ПОЛЕЙ!!!!!!!
 
