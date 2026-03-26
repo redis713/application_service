@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Заявка по ГОЧС</title>
+
+    <!-- Подключение CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Подключение JS -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</head>
+<body>
+<div class="back_container">
+        <a class="type_study_back" href="/">
+            <div class="type_study_button" >
+                <-
+            </div>
+        </a>
+    </div>
+<div class="hh2">
+        <h2>Форма заявки по ГОЧС</h2>
+    </div>
+<div class="container">
+    <div class="container-left">
+        <form method="post">
+            {{ form.hidden_tag() }}
+            <div class="form-section" id="org_data">
+                <h2>Данные шараги</h2>
+                <div class="form-group {% if form.organization_full_name.errors %}has-error{% endif %}">
+                    {{ form.organization_full_name.label}}<br>
+                    {{ form.organization_full_name (class="form-control")}}
+                    {% if form.organization_full_name.errors %}
+                        {% for error in form.organization_full_name.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.organization_short_name.errors %}has-error{% endif %}">
+                    {{ form.organization_short_name.label}}<br>
+                    {{ form.organization_short_name (class="form-control")}}
+                    {% if form.organization_short_name.errors %}
+                        {% for error in form.organization_short_name.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.boss_firstname.errors %}has-error{% endif %}">
+                    {{ form.boss_firstname.label}}<br>
+                    {{ form.boss_firstname (class="form-control")}}
+                    {% if form.boss_firstname.errors %}
+                        {% for error in form.boss_firstname.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.boss_lastname.errors %}has-error{% endif %}">
+                    {{ form.boss_lastname.label}}<br>
+                    {{ form.boss_lastname (class="form-control")}}
+                    {% if form.boss_lastname.errors %}
+                        {% for error in form.boss_lastname.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.boss_patronymic.errors %}has-error{% endif %}">
+                    {{ form.boss_patronymic.label}}<br>
+                    {{ form.boss_patronymic (class="form-control")}}
+                    {% if form.boss_patronymic.errors %}
+                        {% for error in form.boss_patronymic.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.doljnost_boss.errors %}has-error{% endif %}">
+                    {{ form.doljnost_boss.label}}<br>
+                    {{ form.doljnost_boss (class="form-control")}}
+                    {% if form.doljnost_boss.errors %}
+                        {% for error in form.doljnost_boss.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.polnamochia_boss.errors %}has-error{% endif %}">
+                    {{ form.polnamochia_boss.label}}<br>
+                    {{ form.polnamochia_boss (class="form-control")}}
+                    {% if form.polnamochia_boss.errors %}
+                        {% for error in form.polnamochia_boss.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.ogrn.errors %}has-error{% endif %}">
+                    {{ form.ogrn.label}}<br>
+                    {{ form.ogrn (class="form-control")}}
+                    {% if form.ogrn.errors %}
+                        {% for error in form.ogrn.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.inn.errors %}has-error{% endif %}">
+                    {{ form.inn.label}}<br>
+                    {{ form.inn (class="form-control")}}
+                    {% if form.inn.errors %}
+                        {% for error in form.inn.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.kpp.errors %}has-error{% endif %}">
+                    {{ form.kpp.label}}<br>
+                    {{ form.kpp (class="form-control")}}
+                    {% if form.kpp.errors %}
+                        {% for error in form.kpp.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.bank_name.errors %}has-error{% endif %}">
+                    {{ form.bank_name.label}}<br>
+                    {{ form.bank_name (class="form-control")}}
+                    {% if form.bank_name.errors %}
+                        {% for error in form.bank_name.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.rasch_schot.errors %}has-error{% endif %}">
+                    {{ form.rasch_schot.label}}<br>
+                    {{ form.rasch_schot (class="form-control")}}
+                    {% if form.rasch_schot.errors %}
+                        {% for error in form.rasch_schot.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.bik.errors %}has-error{% endif %}">
+                    {{ form.bik.label}}<br>
+                    {{ form.bik (class="form-control")}}
+                    {% if form.bik.errors %}
+                        {% for error in form.bik.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.fakt_address.errors %}has-error{% endif %}">
+                    {{ form.fakt_address.label}}<br>
+                    {{ form.fakt_address (class="form-control")}}
+                    {% if form.fakt_address.errors %}
+                        {% for error in form.fakt_address.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.yur_address.errors %}has-error{% endif %}">
+                    {{ form.yur_address.label}}<br>
+                    {{ form.yur_address (class="form-control")}}
+                    {% if form.yur_address.errors %}
+                        {% for error in form.yur_address.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.telephone.errors %}has-error{% endif %}">
+                    {{ form.telephone.label}}<br>
+                    {{ form.telephone (class="form-control")}}
+                    {% if form.telephone.errors %}
+                        {% for error in form.telephone.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.email.errors %}has-error{% endif %}">
+                    {{ form.email.label}}<br>
+                    {{ form.email (class="form-control")}}
+                    {% if form.email.errors %}
+                        {% for error in form.email.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.doljnost_executor.errors %}has-error{% endif %}">
+                    {{ form.doljnost_executor.label}}<br>
+                    {{ form.doljnost_executor (class="form-control")}}
+                    {% if form.doljnost_executor.errors %}
+                        {% for error in form.doljnost_executor.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.fio_executor.errors %}has-error{% endif %}">
+                    {{ form.fio_executor.label}}<br>
+                    {{ form.fio_executor (class="form-control")}}
+                    {% if form.fio_executor.errors %}
+                        {% for error in form.fio_executor.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group {% if form.telephone_executor.errors %}has-error{% endif %}">
+                    {{ form.telephone_executor.label}}<br>
+                    {{ form.telephone_executor (class="form-control")}}
+                    {% if form.telephone_executor.errors %}
+                        {% for error in form.telephone_executor.errors %}
+                            <div class="error-message">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+            </div>
+
+
+        <!-- Дальше данные слухачей -->
+
+
+        <div class="form-section" id="student_data">
+            <h2>Дальше данные слухачей</h2>
+            <div id="students-container">
+                {% for student_form in form.students %}
+                <div class="student-form">
+                    <div>
+                        <div class="destroy_button_container">
+                           <div class="destroy_button">X</div>
+                        </div>
+                    </div>
+                    <div class="counter">№ 1</div>
+                    <div class="form-group {% if student_form.student_lastname.errors %}has-error{% endif %}">
+                            {{ student_form.student_lastname.label}}<br>
+                            {{ student_form.student_lastname (class="form-control")}}
+                            {% if student_form.student_lastname.errors %}
+                                {% for error in student_form.student_lastname.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.student_firstname.errors %}has-error{% endif %}">
+                            {{ student_form.student_firstname.label}}<br>
+                            {{ student_form.student_firstname (class="form-control")}}
+                            {% if student_form.student_firstname.errors %}
+                                {% for error in student_form.student_firstname.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.student_patronymic.errors %}has-error{% endif %}">
+                            {{ student_form.student_patronymic.label}}<br>
+                            {{ student_form.student_patronymic (class="form-control")}}
+                            {% if student_form.student_patronymic.errors %}
+                                {% for error in student_form.student_patronymic.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.student_birthdate.errors %}has-error{% endif %}">
+                            {{ student_form.student_birthdate.label}}<br>
+                            {{ student_form.student_birthdate (class="form-control", type="date")}}
+                            {% if student_form.student_birthdate.errors %}
+                                {% for error in student_form.student_birthdate.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.citizenship.errors %}has-error{% endif %}">
+                            {{ student_form.citizenship.label}}<br>
+                            {{ student_form.citizenship (class="form-control")}}
+                            {% if student_form.citizenship.errors %}
+                                {% for error in student_form.citizenship.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.education.errors %}has-error{% endif %}">
+                            {{ student_form.education.label}}<br>
+                            {{ student_form.education (class="form-control")}}
+                            {% if student_form.education.errors %}
+                                {% for error in student_form.education.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.institute_name.errors %}has-error{% endif %}">
+                            {{ student_form.institute_name.label}}<br>
+                            {{ student_form.institute_name (class="form-control")}}
+                            {% if student_form.institute_name.errors %}
+                                {% for error in student_form.institute_name.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.diploma_seriesnumber.errors %}has-error{% endif %}">
+                            {{ student_form.diploma_seriesnumber.label}}<br>
+                            {{ student_form.diploma_seriesnumber (class="form-control")}}
+                            {% if student_form.diploma_seriesnumber.errors %}
+                                {% for error in student_form.diploma_seriesnumber.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.diploma_date.errors %}has-error{% endif %}">
+                            {{ student_form.diploma_date.label}}<br>
+                            {{ student_form.diploma_date (class="form-control", type="date")}}
+                            {% if student_form.diploma_date.errors %}
+                                {% for error in student_form.diploma_date.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.diploma_lastname.errors %}has-error{% endif %}">
+                            {{ student_form.diploma_lastname.label}}<br>
+                            {{ student_form.diploma_lastname (class="form-control")}}
+                            {% if student_form.diploma_lastname.errors %}
+                                {% for error in student_form.diploma_lastname.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.snils.errors %}has-error{% endif %}">
+                            {{ student_form.snils.label}}<br>
+                            {{ student_form.snils (class="form-control")}}
+                            {% if student_form.snils.errors %}
+                                {% for error in student_form.snils.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.student_position.errors %}has-error{% endif %}">
+                            {{ student_form.student_position.label}}<br>
+                            {{ student_form.student_position (class="form-control")}}
+                            {% if student_form.student_position.errors %}
+                                {% for error in student_form.student_position.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.student_category.errors %}has-error{% endif %}">
+                            {{ student_form.student_category.label}}<br>
+                            {{ student_form.student_category (class="form-control")}}
+                            {% if student_form.student_category.errors %}
+                                {% for error in student_form.student_category.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.start_date.errors %}has-error{% endif %}">
+                            {{ student_form.start_date.label}}<br>
+                            {{ student_form.start_date (class="form-control", type="date")}}
+                            {% if student_form.start_date.errors %}
+                                {% for error in student_form.start_date.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.end_date.errors %}has-error{% endif %}">
+                            {{ student_form.end_date.label}}<br>
+                            {{ student_form.end_date (class="form-control", type="date")}}
+                            {% if student_form.end_date.errors %}
+                                {% for error in student_form.end_date.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.student_telephone.errors %}has-error{% endif %}">
+                            {{ student_form.student_telephone.label}}<br>
+                            {{ student_form.student_telephone (class="form-control")}}
+                            {% if student_form.student_telephone.errors %}
+                                {% for error in student_form.student_telephone.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.diploma_delivery.errors %}has-error{% endif %}">
+                            {{ student_form.diploma_delivery.label}}<br>
+                            {{ student_form.diploma_delivery (class="form-control")}}
+                            {% if student_form.diploma_delivery.errors %}
+                                {% for error in student_form.diploma_delivery.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.delivery_address.errors %}has-error{% endif %}">
+                            {{ student_form.delivery_address.label}}<br>
+                            {{ student_form.delivery_address (class="form-control")}}
+                            {% if student_form.delivery_address.errors %}
+                                {% for error in student_form.delivery_address.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                    <div class="form-group {% if student_form.student_email.errors %}has-error{% endif %}">
+                            {{ student_form.student_email.label}}<br>
+                            {{ student_form.student_email (class="form-control")}}
+                            {% if student_form.student_email.errors %}
+                                {% for error in student_form.student_email.errors %}
+                                    <div class="error-message">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
+            <div class="add_button_container">
+                <div id="add_button">Добавить слушателя</div>
+            </div>
+        </div>
+        <div class="docx_button_container">
+                <div id="docx_button">Сформировать печатную форму</div>
+        </div>
+        <p>{{ form.submit }}</p>
+    </form>
+    </div>
+
+    <div class="container-right">
+        справа
+    </div>
+
+
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+
+
+
+</div>
+
+</body>
+</html>
