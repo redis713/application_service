@@ -24,7 +24,6 @@ function addStudent() {
 
     //Эта штука меняет id у всех полей
     studentForm.querySelectorAll('[id]').forEach(element => {
-        console.log(element);
         const oldId = element.id;
         const newId = oldId.replace(/\d+/, newIndex);
         element.id = newId;
@@ -58,6 +57,8 @@ function addStudent() {
 
 
     container.appendChild(studentForm);
+
+    rebuildNavigation();
 }
 
 
@@ -76,6 +77,7 @@ function removeStudent(button) {
                 // Обновляем номера слушателей
                 form.querySelectorAll("div.counter").forEach(element => {
                     element.innerHTML = '№' + (i + 1);
+                     element.id = 'student-' + i;
                 });
 
                 // Обновляем все input и select элементы
@@ -105,7 +107,9 @@ function removeStudent(button) {
                     }
                 });
             }
-        } else {
+            rebuildNavigation();
+        }
+        else {
             alert('Должен быть хотя бы один слушатель');
         }
 }
@@ -304,7 +308,33 @@ function downloadDocx() {
 }
 
 
+function rebuildNavigation() {
+    const navigation = document.getElementById('navigation');
 
+    navigation.querySelectorAll('.navigation-item').forEach(el => el.remove());
+
+    document.querySelectorAll('.student-form').forEach((student, index) => {
+
+        const lastname = student.querySelector('[id$="student_lastname"]')?.value ?? '';
+        const firstname = student.querySelector('[id$="student_firstname"]')?.value ?? '';
+        const patronymic = student.querySelector('[id$="student_patronymic"]')?.value ?? '';
+
+        const fio = `${lastname} ${firstname} ${patronymic}`.trim();
+
+
+        const link = document.createElement('a');
+        link.href = `#student-${index}`;
+        link.classList.add('navigation-item');
+
+        link.innerHTML = `
+            <div class="navigation-row">
+                ${index + 1}. ${fio}
+            </div>
+        `;
+
+        navigation.appendChild(link);
+    });
+}
 
 
 
@@ -323,5 +353,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById( "docx_button" ).onclick = downloadDocx;
     //document.getElementById( "add_button" ).addEventListener('click', addStudent);
+
+    document.addEventListener('input', function(event) {
+
+        if (!event.target.id.match(/student_(lastname|firstname|patronymic)$/))
+            return;
+
+        rebuildNavigation();
+    });
 });
 

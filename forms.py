@@ -147,9 +147,9 @@ class ApplicationForm(FlaskForm):
                            validators=[DataRequired(message='Фамилия руководителя, поле обязательно для заполнения'), validate_fio])
     boss_patronymic = StringField('Отчество руководителя',
                            validators=[validate_fio])
-    doljnost_boss = StringField('должность руководителя',
+    doljnost_boss = StringField('Должность руководителя',
                                     validators=[DataRequired(message='должность руководителя, поле обязательно для заполнения')])
-    polnamochia_boss = StringField('действует на основании (указать название (наименование) документа)',
+    polnamochia_boss = StringField('Действует на основании (указать название (наименование) документа)',
                                     validators=[DataRequired(message='действует на основании (указать название (наименование) документа), поле обязательно для заполнения')])
     ogrn = StringField('ОГРН',
                                     validators=[DataRequired(message='ОГРН, поле обязательно для заполнения'), validate_ogrn])
@@ -175,7 +175,7 @@ class ApplicationForm(FlaskForm):
                                     validators=[DataRequired(message='должность исполнителя, поле обязательно для заполнения')])
     fio_executor = StringField('ФИО исполнителя',
                                     validators=[DataRequired(message='ФИО исполнителя, поле обязательно для заполнения')])
-    telephone_executor = StringField('телефон исполнителя',
+    telephone_executor = StringField('Телефон исполнителя',
                                     validators=[DataRequired(message='телефон исполнителя, поле обязательно для заполнения'), Regexp(r'^(\+7|8)\d{10}$', message='Неверный формат телефона')
     ])
 
