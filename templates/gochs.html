@@ -5,8 +5,10 @@
     <title>Заявка по ГОЧС</title>
 
     <!-- Подключение CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tom-select.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <!-- Подключение JS -->
+    <script src="{{ url_for('static', filename='js/tom-select.complete.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </head>
 <body>
@@ -21,12 +23,14 @@
     <h2>Форма заявки по ГОЧС</h2>
 </div>
 
-<div class="step hh2">
-    <hr>
-    <h1>Шаг 1. Заполните данные организации</h1>
-</div>
+
 
 <div class="container">
+    <div class="step hh2">
+        <hr>
+        <h1>Шаг 1. Заполните данные организации</h1>
+    </div>
+
     <form method="post" class="main-form">
         {{ form.hidden_tag() }}
         <div class="container-mid">
@@ -359,34 +363,54 @@
                             {% endif %}
                         </div>
 
-                        <div class="form-group {% if student_form.student_category.errors %}has-error{% endif %}">
-                            {{ student_form.student_category.label}}<br>
-                            {{ student_form.student_category (class="form-control")}}
-                            {% if student_form.student_category.errors %}
-                            {% for error in student_form.student_category.errors %}
-                            <div class="error-message">{{ error }}</div>
-                            {% endfor %}
-                            {% endif %}
-                        </div>
+                        <div class="form-group categories">
+                            <label>Категории обучения</label>
 
-                        <div class="form-group {% if student_form.start_date.errors %}has-error{% endif %}">
-                            {{ student_form.start_date.label}}<br>
-                            {{ student_form.start_date (class="form-control", type="date")}}
-                            {% if student_form.start_date.errors %}
-                            {% for error in student_form.start_date.errors %}
-                            <div class="error-message">{{ error }}</div>
-                            {% endfor %}
-                            {% endif %}
-                        </div>
+                            <div class="categories-container">
 
-                        <div class="form-group {% if student_form.end_date.errors %}has-error{% endif %}">
-                            {{ student_form.end_date.label}}<br>
-                            {{ student_form.end_date (class="form-control", type="date")}}
-                            {% if student_form.end_date.errors %}
-                            {% for error in student_form.end_date.errors %}
-                            <div class="error-message">{{ error }}</div>
-                            {% endfor %}
-                            {% endif %}
+                                {% for category_form in student_form.student_categories %}
+                                <div class="category-row">
+
+                                    <div class="category-content">
+                                        {{ category_form.category(class="form-control category-select") }}
+
+                                        <div class="category-date">
+
+                                            <div class="category-date-text">Начало обучения</div>
+                                            {{ category_form.start_date(type="date", class="date-study") }}
+                                            {% if category_form.start_date.errors %}
+                                            {% for error in category_form.start_date.errors %}
+                                            <div class="error-message">{{ error }}</div>
+                                            {% endfor %}
+                                            {% endif %}
+
+                                        </div>
+
+                                        <div class="category-date">
+
+                                            <div class="category-date-text">Конец обучения</div>
+                                            {{ category_form.end_date(type="date", class="date-study") }}
+                                            {% if category_form.end_date.errors %}
+                                            {% for error in category_form.end_date.errors %}
+                                            <div class="error-message">{{ error }}</div>
+                                            {% endfor %}
+                                            {% endif %}
+
+                                        </div>
+                                    </div>
+
+                                    <div class="remove-category-button">
+                                        -
+                                    </div>
+
+                                </div>
+                                {% endfor %}
+
+                            </div>
+
+                            <div class="add-category-button">
+                                + Добавить категорию
+                            </div>
                         </div>
 
                         <div class="form-group {% if student_form.student_telephone.errors %}has-error{% endif %}">
@@ -448,12 +472,13 @@
 
         <div class="step hh2">
             <hr>
-            <h1>Шаг 3. Сформируйте печатную форму. Распечатайте полученный документ </h1>
+            <h1>Шаг 3. Сформируйте печатную форму. Распечатайте полученный  документ </h1>
         </div>
 
         <div class="container-mid">
             <div class="docx_button_container">
                 <div id="docx_button">Сформировать печатную форму</div>
+                <p>{{ form.download_docx }}</p>
             </div>
             <p>{{ form.submit }}</p>
         </div>

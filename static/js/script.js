@@ -4,9 +4,14 @@ const OGRN_REGEX = /^\d{13}$/;
 const KPP_REGEX = /^\d{9}$/;
 const SNILS_REGEX = /^\d{11}$/;
 
+let studentTemplate;
+let categoryTemplate;
+
 function addStudent() {
     const container = document.getElementById('students-container');
-    const studentForm = container.children[0].cloneNode(true);
+   //const studentForm = container.children[0].cloneNode(true);
+
+    const studentForm = studentTemplate.cloneNode(true);
 
     const newIndex = container.children.length;
     console.log(newIndex);
@@ -35,6 +40,7 @@ function addStudent() {
         });
     });
 
+
     // Очищаем значения полей
     const inputs = studentForm.querySelectorAll('input');
     inputs.forEach(input => {
@@ -55,6 +61,9 @@ function addStudent() {
         select.name = select.name.replace(/\d+/, newIndex);
     });
 
+    //превращаем чистый select в tom select
+    select = studentForm.querySelector('.category-select');
+    initCategorySelect(select);
 
     container.appendChild(studentForm);
 
@@ -202,15 +211,11 @@ function downloadDocx() {
 
    if (!isValid) {
        alert('Пожалуйста, заполните все обязательные поля');
-       return;
+       //return;
    }
 
    if (!validateAll())
         alert("ошибки!!!!!!!!!!!!!!!!");
-
-
-
-
 
 
    //НАДО ДОПИСАТЬ СЮДА ВСЕ ПРОВЕРКИ ПОЛЕЙ!!!!!!!
@@ -336,7 +341,145 @@ function rebuildNavigation() {
     });
 }
 
+function addCategoryBlock(event) {
 
+    const studentForm = event.target.closest('.student-form');
+
+    const container = studentForm.querySelector('.categories-container');
+
+    const newRow = categoryTemplate.cloneNode(true);
+
+
+
+    const categoryIndex =
+        container.querySelectorAll('.category-row').length;
+
+    const studentIndex =
+        studentForm.querySelector('.counter')
+            .id.match(/\d+/)[0];
+
+    newRow.querySelectorAll('[id]').forEach(element => {
+
+        element.id = element.id.replace(
+            /student_categories-\d+/,
+            `student_categories-${categoryIndex}`
+        );
+
+        element.id = element.id.replace(
+            /students-\d+/,
+            `students-${studentIndex}`
+        );
+
+    });
+
+    newRow.querySelectorAll('[name]').forEach(element => {
+
+        element.name = element.name.replace(
+            /student_categories-\d+/,
+            `student_categories-${categoryIndex}`
+        );
+
+        element.name = element.name.replace(
+            /students-\d+/,
+            `students-${studentIndex}`
+        );
+
+    });
+
+    newRow.querySelectorAll('select').forEach(select => {
+        select.selectedIndex = 0;
+    });
+
+    newRow.querySelectorAll('input[type="date"]').forEach(input => {
+        input.value = '';
+    });
+
+
+
+    container.appendChild(newRow);
+
+    newRow.querySelectorAll('select').forEach(select => {
+        initCategorySelect(select);
+    });
+}
+
+
+function reindexStudents() {
+    document.querySelectorAll('.counter')
+        .forEach((counter, index) => {
+            counter.id = `student-${index}`;
+            counter.textContent = `№ ${index + 1}`;
+        });
+}
+
+
+function reindexCategories(container) {
+
+    container.querySelectorAll('.category-row')
+        .forEach((row, index) => {
+
+            row.querySelectorAll('[id]').forEach(element => {
+
+                element.id = element.id.replace(
+                    /student_categories-\d+/,
+                    `student_categories-${index}`
+                );
+
+            });
+
+            row.querySelectorAll('[name]').forEach(element => {
+
+                element.name = element.name.replace(
+                    /student_categories-\d+/,
+                    `student_categories-${index}`
+                );
+
+            });
+
+        });
+}
+
+
+
+
+function initCategorySelect(select) {
+    if (select.tomselect) return;
+
+    new TomSelect(select, {create: false, closeAfterSelect: true, onItemAdd: function() {this.blur();}});
+}
+
+
+
+function cleanTemplate(template) {
+
+    // Очистка текстовых полей и дат
+    template.querySelectorAll('input').forEach(input => {
+
+        if (
+            input.type !== 'hidden' &&
+            input.type !== 'radio' &&
+            input.type !== 'checkbox'
+        ) {
+            input.value = '';
+        }
+
+    });
+
+    // Очистка select
+    template.querySelectorAll('select').forEach(select => {
+        select.selectedIndex = 0;
+    });
+
+    // Удаление сообщений об ошибках WTForms
+    template.querySelectorAll('.error-message')
+        .forEach(error => error.remove());
+
+    // Если в шаблон случайно попал Tom Select
+    template.querySelectorAll('.ts-wrapper')
+        .forEach(wrapper => wrapper.remove());
+
+    return template;
+}
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -354,6 +497,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById( "docx_button" ).onclick = downloadDocx;
     //document.getElementById( "add_button" ).addEventListener('click', addStudent);
 
+    // перестройка навигации при вводе текста
     document.addEventListener('input', function(event) {
 
         if (!event.target.id.match(/student_(lastname|firstname|patronymic)$/))
@@ -361,5 +505,67 @@ document.addEventListener("DOMContentLoaded", () => {
 
         rebuildNavigation();
     });
+
+    //добавление нового поля категории
+    document.addEventListener('click', function(event) {
+
+        if (!event.target.classList.contains('add-category-button'))
+            return;
+
+        addCategoryBlock(event);
+
+    });
+
+    // удаление поля категории
+    document.addEventListener('click', function(event) {
+
+        if (!event.target.classList.contains('remove-category-button'))
+            return;
+
+        const row = event.target.closest('.category-row');
+
+        const container = row.parentElement;
+
+        if (container.children.length === 1)
+            return;
+
+        row.remove();
+
+        reindexCategories(container);
+    });
+
+//     document.querySelectorAll('select').forEach(select => {
+//        new TomSelect(select);
+//    });
+
+
+
+    studentTemplate =document.querySelector('#students-container').children[0].cloneNode(true);
+    categoryTemplate = document.querySelector('.category-row').cloneNode(true);
+
+    console.log(studentTemplate.outerHTML);
+    console.log(categoryTemplate.outerHTML);
+
+
+    cleanTemplate(studentTemplate);
+    cleanTemplate(categoryTemplate);
+
+    document.querySelectorAll('.category-row select').forEach(select => {
+        initCategorySelect(select);
+    });
+
+    //Пересчет номеров слушателей и их id
+    reindexStudents();
+    rebuildNavigation();
+
+
+//    document.querySelectorAll(
+//        'select[id*="student_categories"]'
+//    ).forEach(select => {
+//
+//        new TomSelect(select);
+//
+//    });
+
 });
 
