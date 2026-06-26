@@ -1,3 +1,5 @@
+from wsgiref.util import setup_testing_defaults
+
 from docx import Document
 from docxtpl import DocxTemplate
 
@@ -65,56 +67,114 @@ templates = {'112.docx': [''],
              'antiterror.docx': ['']
              }
 
+def format_form(form_data):
+    data = {}
+    organization = {
+        'organization_full_name': form_data.organization_full_name.data,
+        'organization_short_name': form_data.organization_short_name.data,
+        'boss_firstname': form_data.boss_firstname.data,
+        'boss_lastname': form_data.boss_lastname.data,
+        'boss_patronymic': form_data.boss_patronymic.data,
+        'doljnost_boss': form_data.doljnost_boss.data,
+        'polnamochia_boss': form_data.polnamochia_boss.data,
+        'ogrn': form_data.ogrn.data,
+        'inn': form_data.inn.data,
+        'kpp': form_data.kpp.data,
+        'bank_name': form_data.bank_name.data,
+        'rasch_schot': form_data.rasch_schot.data,
+        'bik': form_data.bik.data,
+        'fakt_address': form_data.fakt_address.data,
+        'yur_address': form_data.yur_address.data,
+        'telephone': form_data.telephone.data,
+        'email': form_data.email.data,
+        'doljnost_executor': form_data.doljnost_executor.data,
+        'fio_executor': form_data.fio_executor.data,
+        'telephone_executor': form_data.telephone_executor.data
+    }
+    students = []
+    
+    for student in form_data.students:
+        students.append({
+            'firstname': student.student_firstname.data,
+            'lastname': student.student_lastname.data,
+            'patronymic': student.student_patronymic.data,
+            'birthdate': student.student_birthdate.data,
+            'citizenship': student.citizenship.data,
+            'education': student.education.data,
+            'institute_name': student.institute_name.data,
+            'diploma_seriesnumber': student.diploma_seriesnumber.data,
+            'diploma_date': student.diploma_date.data,
+            'diploma_lastname': student.diploma_lastname.data,
+            'snils': student.snils.data,
+            'student-position': student.position.data,
+            'student_category': student.category.data,
+            # 'fire_safety_document_type': student.fire_safety_document_type.data,
+            # 'fire_institution': student.fire_institution.data,
+            # 'fire_series': student.fire_series.data,
+            # 'fire_number': student.fire_number.data,
+            # 'fire_date': student.fire_date.data,
+            'student_telephone': student.student_telephone.data,
+            'email': student.student_email.data,
+            'phone': student.student_telephone.data
+        })
 
 def generate_docx(form_data):
-    #print(form_data)
+    print('Это из gen_docx: ', form_data)
     context = {}
-    organization = form_data['organization']
-    students = form_data['students']
+
     students_data = []
 
-    context['organization_name'] = organization['organization_full_name'] + ', ' + organization['organization_short_name']
-    context['fio_boss'] = organization['boss_firstname'] + ' ' + organization['boss_lastname'] + ' ' + organization['boss_patronymic'] + ', ' + organization['doljnost_boss'] + organization['polnamochia_boss']
-    #context['doljnost_boss'] = organization['doljnost_boss']
-    #context['polnamochia_boss'] = organization['polnamochia_boss']
-    #print(11)
-    context['ogrn'] = 'ОГРН: ' + organization['ogrn'] +'\n\n' + 'ИНН: ' + organization['inn'] + '\n\n' + 'КПП: ' + organization['kpp'] + '\n\n' + 'Банк: ' + organization['bank_name'] + '\n\n' + 'р/с: ' + organization['rasch_schot'] + '\n\n' + 'БИК: ' + organization['bik']
-    #print(context['ogrn'])
-    #context['inn'] = organization['inn']
-    #context['kpp'] = organization['kpp']
-    #context['bank_name'] = organization['bank_name']
-    #context['rasch_schot'] = organization['rasch_schot']
-    #context['bik'] = organization['bik']
-    context['fakt_address'] = organization['fakt_address']
-    context['yur_address'] = organization['yur_address']
-    context['telephone'] = organization['telephone']
-    context['email'] = organization['email']
-    context['doljnost_executor'] = organization['doljnost_executor'] + organization['fio_executor'] + organization['telephone_executor']
-    #context['fio_executor'] = organization['fio_executor']
-    #context['telephone_executor'] = organization['telephone_executor']
+    print('students: ', form_data.students)
+
+    context['organization_name'] = form_data.organization_full_name.data + ', ' + form_data.organization_short_name.data
+    context['fio_boss'] = form_data.boss_lastname.data + ' ' + form_data.boss_firstname.data + ' ' + form_data.boss_patronymic.data + ', ' + form_data.doljnost_boss.data + form_data.doljnost_boss.data + form_data.polnamochia_boss.data
+    context['ogrn'] = 'ОГРН: ' + form_data.ogrn.data +'\n' + 'ИНН: ' + form_data.inn.data + '\n' + 'КПП: ' + form_data.kpp.data + '\n' + 'Банк: ' + form_data.bank_name.data + '\n' + 'р/с: ' + form_data.rasch_schot.data + '\n' + 'БИК: ' + form_data.bik.data
+    context['fakt_address'] = form_data.fakt_address.data
+    context['yur_address'] = form_data.yur_address.data
+    context['telephone'] = form_data.telephone.data
+    context['email'] = form_data.email.data
+    context['doljnost_executor'] = form_data.doljnost_executor.data + form_data.fio_executor.data + form_data.telephone_executor.data
 
 
-    context['people_kol'] = len(students)
+    context['people_kol'] = len(form_data.students)
 
     new_student = {}
     count = 1
     #print(students)
-    for student in students:
+    for student in form_data.students:
         new_student.clear()
+
+        new_student['category'] = ''
+        new_student['date'] = ''
+
         new_student['num'] = count
+        print(student.student_lastname.data)
+        new_student['name'] = student.student_lastname.data + ' ' + student.student_firstname.data + ' ' + student.student_patronymic.data + '\n\n' + student.student_birthdate.data + '\n\n' + student.citizenship.data
+        print(new_student['name'])
+
+        new_student['education'] = student.education.data + '\n\n' +student.institute_name.data + ' ' + student.diploma_seriesnumber.data + ', ' + student.diploma_date.data + '\n\n' + student.diploma_lastname.data + '\n\n' + student.snils.data
+        new_student['position'] = student.student_position.data
 
 
-        new_student['name'] = student['student_firstname'] + ' ' + student['student_lastname'] + ' ' + student['student_patronymic'] + '\n\n' + student['student_birthdate'] + '\n\n' + student['citizenship']
-        new_student['education'] = student['education'] + '\n\n' + student['institute_name'] + ' ' + student['diploma_seriesnumber'] + ', ' + student['diploma_date'] + '\n\n' + student['diploma_lastname'] + '\n\n' + student['snils']
-        new_student['position'] = student['student_position']
-        new_student['category'] = categories[student['student_category']]
-        new_student['date'] = student['start_date'] + ' - ' + student['end_date']
+        start_dates = []
+        end_dates = []
 
-        new_student['phone'] = student['student_telephone'] + '\n\n' + delivery[student['diploma_delivery']]
-        if student['diploma_delivery'] == 'mail':
-            new_student['phone'] += '\n\n' + student['delivery_address']
+        for category in student.student_categories:
+            new_student['category'] += categories[category.category.data] + '\n\n'
 
-        new_student['email'] = student['student_email']
+            start_dates.append(category.start_date.data)
+            end_dates.append(category.end_date.data)
+
+
+        for i in range(len(start_dates)):
+            new_student['date']  += str(start_dates[i]) + ' - ' + str(end_dates[i])
+
+
+        new_student['phone'] =  student.student_telephone.data + '\n\n' + delivery[student.diploma_delivery.data]
+        if student.diploma_delivery.data == 'mail':
+            new_student['phone'] += '\n\n' + student.delivery_address.data
+
+        new_student['email'] = student.student_email.data
 
        # if 'fire' in student['category']:
            # new_student['fire'] = student['fire_institution'] + '\n\n'

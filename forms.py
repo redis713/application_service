@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, FieldList, FormField, SelectField
+from wtforms import StringField, SubmitField, FieldList, FormField, SelectField, DateField
 from wtforms.validators import DataRequired, Regexp, Email, ValidationError
 import re
 
@@ -71,6 +71,23 @@ def validate_kpp(form, field):
     if not re.match(KPP_REGEX, field.data):
         raise ValidationError("КПП должен содержать только 9 цифр!")
 
+
+class CategoryForm(FlaskForm):
+    category = SelectField(
+        'Категория обучения',
+        choices=categories
+    )
+    start_date = DateField('Дата начала обучения', validators=[DataRequired(message='Укажите дату начала обучения')])
+    end_date = DateField('Дата конца обучения', validators=[DataRequired(message='Укажите дату конца обучения')])
+
+    def validate_end_date(self, field):
+        if self.start_date.data and field.data:
+            if field.data < self.start_date.data:
+                raise ValidationError(
+                    'Дата окончания не может быть раньше даты начала'
+                )
+
+
 class StudentForm(FlaskForm):
     student_firstname = StringField('Имя слушателя', validators=[DataRequired(message='Имя слушателя, поле обязательно для заполнения'), validate_fio])
     student_lastname = StringField('Фамилия слушателя',
@@ -105,16 +122,16 @@ class StudentForm(FlaskForm):
     student_position = StringField('Должность', validators=[
         DataRequired(message='Поле Должность обязательно')
     ])
-    student_category = SelectField('Категория обучения',
-                                   choices=categories,
-                                   validators=[DataRequired(message='Выберите категорию обучения')]
-                                   )
-    start_date = StringField('Дата начала обучения', validators=[
-        DataRequired(message='Укажите дату начала обучения')
-    ])
-    end_date = StringField('Дата окончания обучения', validators=[
-        DataRequired(message='Укажите дату окончания обучения')
-    ])
+
+    # student_category = SelectField('Категория обучения',
+    #                                choices=categories,
+    #                                validators=[DataRequired(message='Выберите категорию обучения')]
+    #                                )
+
+    #student_categories = FieldList(SelectField(choices=categories, validators=[DataRequired(message='Выберите категорию обучения')]), min_entries=1)
+
+    student_categories = FieldList(FormField(CategoryForm), min_entries=1)
+
     student_telephone = StringField('Телефон (обязательно)',
                             validators=[DataRequired(message='Телефон, поле обязательно для заполнения'),
                                         Regexp(r'^(\+7|8)\d{10}$', message='Неверный формат телефона')])
@@ -182,6 +199,7 @@ class ApplicationForm(FlaskForm):
     students = FieldList(FormField(StudentForm), min_entries=1)
 
     submit = SubmitField('Отправить')
+    download_docx = SubmitField('Сформировать печатную форму')
 
 
 
