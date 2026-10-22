@@ -34,152 +34,151 @@
 <form method="post" id="application-form">
     {{ form.hidden_tag() }}
 
-    <div class="form-layout">
+    <!-- ШАГ 1: ДАННЫЕ ОРГАНИЗАЦИИ (Во всю ширину) -->
+    <div class="step-divider">
+        <h2>Шаг 1. Данные направляющей организации</h2>
+        <p>Укажите официальные реквизиты юридического лица или органа местного самоуправления</p>
+    </div>
+
+    <div class="form-card" id="org_data">
+        <h3>Реквизиты юридического лица</h3>
+
+        <div class="form-group {% if form.organization_full_name.errors %}has-error{% endif %}">
+            {{ form.organization_full_name.label }}
+            {{ form.organization_full_name(class="form-control", placeholder="Полное наименование по ЕГРЮЛ / Уставу") }}
+            {% for err in form.organization_full_name.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+        </div>
+
+        <div class="form-group {% if form.organization_short_name.errors %}has-error{% endif %}">
+            {{ form.organization_short_name.label }}
+            {{ form.organization_short_name(class="form-control", placeholder="Сокращенное наименование") }}
+            {% for err in form.organization_short_name.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-1 {% if form.inn.errors %}has-error{% endif %}">
+                {{ form.inn.label }}
+                {{ form.inn(class="form-control", placeholder="10 или 12 цифр") }}
+                {% for err in form.inn.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+            <div class="form-group col-1 {% if form.kpp.errors %}has-error{% endif %}">
+                {{ form.kpp.label }}
+                {{ form.kpp(class="form-control", placeholder="9 цифр (для юрлиц)") }}
+                {% for err in form.kpp.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+            <div class="form-group col-1 {% if form.ogrn.errors %}has-error{% endif %}">
+                {{ form.ogrn.label }}
+                {{ form.ogrn(class="form-control", placeholder="13 или 15 цифр") }}
+                {% for err in form.ogrn.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-2 {% if form.bank_name.errors %}has-error{% endif %}">
+                {{ form.bank_name.label }}
+                {{ form.bank_name(class="form-control", placeholder="Наименование банка") }}
+                {% for err in form.bank_name.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+            <div class="form-group col-1 {% if form.bik.errors %}has-error{% endif %}">
+                {{ form.bik.label }}
+                {{ form.bik(class="form-control", placeholder="9 цифр") }}
+                {% for err in form.bik.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+        </div>
+
+        <div class="form-group {% if form.rasch_schot.errors %}has-error{% endif %}">
+            {{ form.rasch_schot.label }}
+            {{ form.rasch_schot(class="form-control", placeholder="20 цифр расчетного счета") }}
+            {% for err in form.rasch_schot.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+        </div>
+
+        <h3>Руководитель организации</h3>
+        <div class="form-row">
+            <div class="form-group col-1 {% if form.boss_lastname.errors %}has-error{% endif %}">
+                {{ form.boss_lastname.label }}
+                {{ form.boss_lastname(class="form-control") }}
+                {% for err in form.boss_lastname.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+            <div class="form-group col-1 {% if form.boss_firstname.errors %}has-error{% endif %}">
+                {{ form.boss_firstname.label }}
+                {{ form.boss_firstname(class="form-control") }}
+                {% for err in form.boss_firstname.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+            <div class="form-group col-1 {% if form.boss_patronymic.errors %}has-error{% endif %}">
+                {{ form.boss_patronymic.label }}
+                {{ form.boss_patronymic(class="form-control") }}
+                {% for err in form.boss_patronymic.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-1 {% if form.doljnost_boss.errors %}has-error{% endif %}">
+                {{ form.doljnost_boss.label }}
+                {{ form.doljnost_boss(class="form-control", placeholder="Генеральный директор, Мэр...") }}
+                {% for err in form.doljnost_boss.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+            <div class="form-group col-1 {% if form.polnamochia_boss.errors %}has-error{% endif %}">
+                {{ form.polnamochia_boss.label }}
+                {{ form.polnamochia_boss(class="form-control", placeholder="Устава, Положения, Доверенности №...") }}
+                {% for err in form.polnamochia_boss.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+        </div>
+
+        <h3>Адреса и контакты</h3>
+        <div class="form-group {% if form.yur_address.errors %}has-error{% endif %}">
+            {{ form.yur_address.label }}
+            {{ form.yur_address(class="form-control", placeholder="Юридический адрес") }}
+            {% for err in form.yur_address.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+        </div>
+        <div class="form-group {% if form.fakt_address.errors %}has-error{% endif %}">
+            {{ form.fakt_address.label }}
+            {{ form.fakt_address(class="form-control", placeholder="Фактический адрес") }}
+            {% for err in form.fakt_address.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-1 {% if form.telephone.errors %}has-error{% endif %}">
+                {{ form.telephone.label }}
+                {{ form.telephone(class="form-control", placeholder="+7 (___) ___-__-__") }}
+                {% for err in form.telephone.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+            <div class="form-group col-1 {% if form.email.errors %}has-error{% endif %}">
+                {{ form.email.label }}
+                {{ form.email(class="form-control", placeholder="org@mail.ru") }}
+                {% for err in form.email.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+        </div>
+
+        <h3>Ответственный исполнитель (составитель заявки)</h3>
+        <div class="form-row">
+            <div class="form-group col-1 {% if form.fio_executor.errors %}has-error{% endif %}">
+                {{ form.fio_executor.label }}
+                {{ form.fio_executor(class="form-control", placeholder="ФИО сотрудника") }}
+                {% for err in form.fio_executor.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+            <div class="form-group col-1 {% if form.doljnost_executor.errors %}has-error{% endif %}">
+                {{ form.doljnost_executor.label }}
+                {{ form.doljnost_executor(class="form-control", placeholder="Специалист по кадрам...") }}
+                {% for err in form.doljnost_executor.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+            <div class="form-group col-1 {% if form.telephone_executor.errors %}has-error{% endif %}">
+                {{ form.telephone_executor.label }}
+                {{ form.telephone_executor(class="form-control", placeholder="+7 (___) ___-__-__") }}
+                {% for err in form.telephone_executor.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ШАГ 2: ДАННЫЕ СЛУШАТЕЛЕЙ (Двухколоночный макет со sticky-навигацией ТОЛЬКО здесь) -->
+    <div class="step-divider">
+        <h2>Шаг 2. Данные слушателей (сотрудников)</h2>
+        <p>Сведения о направляемых работниках и документы об образовании для ФИС ФРДО</p>
+    </div>
+
+    <div class="students-layout">
         
-        <!-- ЛЕВАЯ КОЛОНКА (ОСНОВНОЙ КОНТЕНТ) -->
-        <div class="form-main-column">
-
-            <!-- ШАГ 1: ОРГАНИЗАЦИЯ -->
-            <div class="step-divider">
-                <h2>Шаг 1. Данные направляющей организации</h2>
-                <p>Укажите официальные реквизиты юридического лица или органа местного самоуправления</p>
-            </div>
-
-            <div class="form-card" id="org_data">
-                <h3>Реквизиты юридического лица</h3>
-
-                <div class="form-group {% if form.organization_full_name.errors %}has-error{% endif %}">
-                    {{ form.organization_full_name.label }}
-                    {{ form.organization_full_name(class="form-control", placeholder="Полное наименование по ЕГРЮЛ / Уставу") }}
-                    {% for err in form.organization_full_name.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-
-                <div class="form-group {% if form.organization_short_name.errors %}has-error{% endif %}">
-                    {{ form.organization_short_name.label }}
-                    {{ form.organization_short_name(class="form-control", placeholder="Сокращенное наименование") }}
-                    {% for err in form.organization_short_name.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group col-1 {% if form.inn.errors %}has-error{% endif %}">
-                        {{ form.inn.label }}
-                        {{ form.inn(class="form-control", placeholder="10 или 12 цифр") }}
-                        {% for err in form.inn.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                    <div class="form-group col-1 {% if form.kpp.errors %}has-error{% endif %}">
-                        {{ form.kpp.label }}
-                        {{ form.kpp(class="form-control", placeholder="9 цифр (для юрлиц)") }}
-                        {% for err in form.kpp.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                    <div class="form-group col-1 {% if form.ogrn.errors %}has-error{% endif %}">
-                        {{ form.ogrn.label }}
-                        {{ form.ogrn(class="form-control", placeholder="13 или 15 цифр") }}
-                        {% for err in form.ogrn.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group col-2 {% if form.bank_name.errors %}has-error{% endif %}">
-                        {{ form.bank_name.label }}
-                        {{ form.bank_name(class="form-control", placeholder="Наименование банка") }}
-                        {% for err in form.bank_name.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                    <div class="form-group col-1 {% if form.bik.errors %}has-error{% endif %}">
-                        {{ form.bik.label }}
-                        {{ form.bik(class="form-control", placeholder="9 цифр") }}
-                        {% for err in form.bik.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                </div>
-
-                <div class="form-group {% if form.rasch_schot.errors %}has-error{% endif %}">
-                    {{ form.rasch_schot.label }}
-                    {{ form.rasch_schot(class="form-control", placeholder="20 цифр расчетного счета") }}
-                    {% for err in form.rasch_schot.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-
-                <h3>Руководитель организации</h3>
-                <div class="form-row">
-                    <div class="form-group col-1 {% if form.boss_lastname.errors %}has-error{% endif %}">
-                        {{ form.boss_lastname.label }}
-                        {{ form.boss_lastname(class="form-control") }}
-                        {% for err in form.boss_lastname.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                    <div class="form-group col-1 {% if form.boss_firstname.errors %}has-error{% endif %}">
-                        {{ form.boss_firstname.label }}
-                        {{ form.boss_firstname(class="form-control") }}
-                        {% for err in form.boss_firstname.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                    <div class="form-group col-1 {% if form.boss_patronymic.errors %}has-error{% endif %}">
-                        {{ form.boss_patronymic.label }}
-                        {{ form.boss_patronymic(class="form-control") }}
-                        {% for err in form.boss_patronymic.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group col-1 {% if form.doljnost_boss.errors %}has-error{% endif %}">
-                        {{ form.doljnost_boss.label }}
-                        {{ form.doljnost_boss(class="form-control", placeholder="Генеральный директор, Мэр...") }}
-                        {% for err in form.doljnost_boss.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                    <div class="form-group col-1 {% if form.polnamochia_boss.errors %}has-error{% endif %}">
-                        {{ form.polnamochia_boss.label }}
-                        {{ form.polnamochia_boss(class="form-control", placeholder="Устава, Положения, Доверенности №...") }}
-                        {% for err in form.polnamochia_boss.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                </div>
-
-                <h3>Адреса и контакты</h3>
-                <div class="form-group {% if form.yur_address.errors %}has-error{% endif %}">
-                    {{ form.yur_address.label }}
-                    {{ form.yur_address(class="form-control", placeholder="Юридический адрес") }}
-                    {% for err in form.yur_address.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-                <div class="form-group {% if form.fakt_address.errors %}has-error{% endif %}">
-                    {{ form.fakt_address.label }}
-                    {{ form.fakt_address(class="form-control", placeholder="Фактический адрес") }}
-                    {% for err in form.fakt_address.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group col-1 {% if form.telephone.errors %}has-error{% endif %}">
-                        {{ form.telephone.label }}
-                        {{ form.telephone(class="form-control", placeholder="+7 (___) ___-__-__") }}
-                        {% for err in form.telephone.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                    <div class="form-group col-1 {% if form.email.errors %}has-error{% endif %}">
-                        {{ form.email.label }}
-                        {{ form.email(class="form-control", placeholder="org@mail.ru") }}
-                        {% for err in form.email.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                </div>
-
-                <h3>Ответственный исполнитель (составитель заявки)</h3>
-                <div class="form-row">
-                    <div class="form-group col-1 {% if form.fio_executor.errors %}has-error{% endif %}">
-                        {{ form.fio_executor.label }}
-                        {{ form.fio_executor(class="form-control", placeholder="ФИО сотрудника") }}
-                        {% for err in form.fio_executor.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                    <div class="form-group col-1 {% if form.doljnost_executor.errors %}has-error{% endif %}">
-                        {{ form.doljnost_executor.label }}
-                        {{ form.doljnost_executor(class="form-control", placeholder="Специалист по кадрам...") }}
-                        {% for err in form.doljnost_executor.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                    <div class="form-group col-1 {% if form.telephone_executor.errors %}has-error{% endif %}">
-                        {{ form.telephone_executor.label }}
-                        {{ form.telephone_executor(class="form-control", placeholder="+7 (___) ___-__-__") }}
-                        {% for err in form.telephone_executor.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- ШАГ 2: СЛУШАТЕЛИ -->
-            <div class="step-divider">
-                <h2>Шаг 2. Данные слушателей (сотрудников)</h2>
-                <p>Сведения о направляемых работниках и документы об образовании для ФИС ФРДО</p>
-            </div>
-
+        <!-- Левая часть: Карточки слушателей -->
+        <div class="students-main-column">
             <div id="students-container">
                 {% for student_form in form.students %}
                 {% set s_idx = loop.index0 %}
@@ -290,7 +289,7 @@
                             <div class="category-row">
                                 <div class="category-content">
                                     <div style="margin-bottom: 10px;">
-                                        {{ cat_form.category(class="form-control category-select") }}
+                                        {{ cat_form.category(class="category-select") }}
                                         {% for err in cat_form.category.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                                     </div>
                                     <div class="form-row">
@@ -332,30 +331,15 @@
                 {% endfor %}
             </div>
 
-            <div style="margin: 20px 0 40px 0;">
+            <div style="margin: 20px 0 30px 0;">
                 <button type="button" class="btn-primary-action" onclick="addNewStudent()">
                     + Добавить еще одного слушателя
                 </button>
             </div>
-
-            <!-- ШАГ 3: ФОРМИРОВАНИЕ -->
-            <div class="step-divider">
-                <h2>Шаг 3. Формирование официального документа</h2>
-            </div>
-
-            <div class="action-card" style="text-align: center; padding: 36px 24px;">
-                <button type="submit" class="btn-primary-action" style="font-size: 1.15rem; padding: 16px 36px;">
-                    📄 Сформировать печатную форму (.docx) и перейти к загрузке скана →
-                </button>
-                <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 14px;">
-                    Система зафиксирует черновик заявки и сгенерирует готовый файл Word для распечатки, подписи руководителем и заверения печатью.
-                </p>
-            </div>
-
         </div>
 
-        <!-- ПРАВАЯ КОЛОНКА (НАВИГАЦИЯ STICKY) -->
-        <aside class="form-sidebar">
+        <!-- Правая колонка: Навигация по слушателям (ездит ТОЛЬКО в пределах Шага 2) -->
+        <aside class="students-sidebar">
             <div class="navigation-box">
                 <div class="navigation-title">Список слушателей</div>
                 <div class="navigation-list" id="navigation-items">
@@ -365,6 +349,21 @@
         </aside>
 
     </div>
+
+    <!-- ШАГ 3: ФОРМИРОВАНИЕ ОФИЦИАЛЬНОГО ДОКУМЕНТА (Во всю ширину) -->
+    <div class="step-divider">
+        <h2>Шаг 3. Формирование официального документа</h2>
+    </div>
+
+    <div class="action-card" style="text-align: center; padding: 36px 24px;">
+        <button type="submit" class="btn-primary-action" style="font-size: 1.15rem; padding: 16px 36px;">
+            📄 Сформировать печатную форму (.docx) и перейти к загрузке скана →
+        </button>
+        <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 14px;">
+            Система зафиксирует черновик заявки и сгенерирует готовый файл Word для распечатки, подписи руководителем и заверения печатью.
+        </p>
+    </div>
+
 </form>
 {% endblock %}
 
@@ -475,7 +474,7 @@ function addCategoryRow(btn) {
     div.innerHTML = `
         <div class="category-content">
             <div style="margin-bottom: 10px;">
-                <select name="students-${sIdx}-student_categories-${cIdx}-category" class="form-control category-select" required>
+                <select name="students-${sIdx}-student_categories-${cIdx}-category" class="category-select" required>
                     ${optionsHtml}
                 </select>
             </div>
@@ -605,7 +604,7 @@ function addNewStudent() {
                 <div class="category-row">
                     <div class="category-content">
                         <div style="margin-bottom: 10px;">
-                            <select name="students-${sIdx}-student_categories-0-category" class="form-control category-select" required>
+                            <select name="students-${sIdx}-student_categories-0-category" class="category-select" required>
                                 ${optionsHtml}
                             </select>
                         </div>
@@ -650,16 +649,34 @@ function addNewStudent() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    // 1. Инициализация существующих TomSelect
     document.querySelectorAll(".category-select").forEach(initTomSelect);
+
+    // 2. Первоначальное построение боковой навигации
     updateNavigation();
 
+    // 3. Отслеживание ввода ФИО для обновления навигации в реальном времени
     document.addEventListener("input", (e) => {
         if (e.target.classList.contains("student-fio-input")) {
             updateNavigation();
         }
     });
 
+    // 4. Проверка способов доставки при загрузке
     document.querySelectorAll(".delivery-select").forEach(toggleDeliveryAddress);
+
+    // 5. Умный скролл к первому полю с ошибкой (предотвращает прыжок страницы на середину)
+    const firstError = document.querySelector(".has-error");
+    if (firstError) {
+        if ("scrollRestoration" in history) {
+            history.scrollRestoration = "manual";
+        }
+        setTimeout(() => {
+            firstError.scrollIntoView({ behavior: "smooth", block: "center" });
+            const input = firstError.querySelector("input, select, textarea");
+            if (input) input.focus();
+        }, 150);
+    }
 });
 </script>
 {% endblock %}
