@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Внутренняя ошибка сервера (500){% endblock %}
+
+{% block content %}
+<div class="container-mid" style="width: 100%; text-align: center; margin-top: 50px;">
+    <h1 style="font-size: 4rem; color: #dc2626; margin-bottom: 10px;">500</h1>
+    <h2>Произошла ошибка при обработке запроса</h2>
+    <p style="color: #64748b; margin-bottom: 30px;">Специалисты уже уведомлены. Пожалуйста, попробуйте повторить попытку позже.</p>
+    <a href="{{ url_for('main.index') }}" class="btn-primary-action">На главную</a>
+</div>
+{% endblock %}

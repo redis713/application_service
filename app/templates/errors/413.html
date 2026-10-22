@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Файл слишком большой (413){% endblock %}
+
+{% block content %}
+<div class="container-mid" style="width: 100%; text-align: center; margin-top: 50px;">
+    <h1 style="font-size: 3rem; color: #d97706; margin-bottom: 10px;">Файл слишком большой</h1>
+    <p style="color: #64748b; margin-bottom: 30px;">Максимальный разрешенный размер загружаемого скана составляет 30 МБ. Пожалуйста, сожмите PDF или фото перед отправкой.</p>
+    <a href="javascript:history.back()" class="btn-primary-action">← Вернуться и выбрать другой файл</a>
+</div>
+{% endblock %}

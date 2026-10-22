@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Выбор формы обучения{% endblock %}
+
+{% block content %}
+<div class="container-mid" style="width: 100%; text-align: center; margin-top: 20px;">
+    <div class="hh2">
+        <h2>Выберите форму обучения</h2>
+        <p style="color: #64748b; font-size: 1.1rem; margin-top: 5px;">
+            Определите формат проведения занятий для ваших специалистов
+        </p>
+    </div>
+
+    <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 30px; width: 100%;">
+        <a class="type_study_a" href="{{ url_for('main.ochno') }}" style="text-decoration: none;">
+            <div class="type_study_button" style="min-width: 320px; padding: 25px 20px;">
+                <h3 style="margin: 0 0 10px 0; font-size: 1.3rem;">Очно-заочное обучение</h3>
+                <span style="font-size: 0.9rem; opacity: 0.85;">Очные занятия на базе учебного центра с практикой</span>
+            </div>
+        </a>
+
+        <a class="type_study_a" href="{{ url_for('main.distant') }}" style="text-decoration: none;">
+            <div class="type_study_button" style="min-width: 320px; padding: 25px 20px;">
+                <h3 style="margin: 0 0 10px 0; font-size: 1.3rem;">Дистанционное обучение</h3>
+                <span style="font-size: 0.9rem; opacity: 0.85;">Обучение через портал СДО без выезда с рабочего места</span>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

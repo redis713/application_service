@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Заявка {{ application.app_number }} — Скачивание и прикрепление скана{% endblock %}
+
+{% block content %}
+<div class="steps-wizard">
+    <div class="wizard-step completed">
+        <span class="circle">✓</span>
+        <span>Данные заполнены</span>
+    </div>
+    <div class="wizard-step active">
+        <span class="circle">2</span>
+        <span>Скачивание бланка</span>
+    </div>
+    <div class="wizard-step active">
+        <span class="circle">3</span>
+        <span>Прикрепление скана с печатью</span>
+    </div>
+</div>
+
+<div class="container-mid" style="width: 75%; margin-top: 10px;">
+
+    <div class="action-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+            <div>
+                <span class="badge-status badge-draft">Черновик (требуется скан)</span>
+                <h2 style="margin: 8px 0 4px 0; font-size: 1.8rem;">Заявка {{ application.app_number }}</h2>
+                <p style="margin: 0; color: #64748b; font-size: 0.95rem;">
+                    Организация: <strong>{{ application.organization.short_name }}</strong> (ИНН: {{ application.organization.inn }})
+                </p>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 0.9rem; color: #64748b;">Количество слушателей:</span><br>
+                <strong style="font-size: 1.4rem; color: var(--primary-color);">{{ application.listeners|length }} чел.</strong>
+            </div>
+        </div>
+
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h3 style="margin: 0 0 5px 0; color: #1e3a8a;">Шаг 2. Скачайте официальный бланк заявления</h3>
+                <p style="margin: 0; color: #3b82f6; font-size: 0.9rem;">
+                    Документ Word сформирован по утвержденной форме УМЦ со всеми реквизитами
+                </p>
+            </div>
+            <a href="{{ url_for('apply.download_docx', token=application.secret_token) }}" class="btn-primary-action" id="download-link">
+                📥 Скачать заявление (.docx)
+            </a>
+        </div>
+
+        <div class="instruction-list">
+            <h3 style="margin-top: 0; color: var(--primary-color);">Порядок действий для завершения подачи заявки:</h3>
+            <ol>
+                <li><strong>Скачайте и распечатайте</strong> сформированное заявление на бланке выше.</li>
+                <li><strong>Передайте на подпись:</strong> руководитель организации должен поставить личную подпись.</li>
+                <li><strong>Поставьте печать</strong> организации (при наличии).</li>
+                <li><strong>Отсканируйте</strong> подписанное заявление (формат PDF или четкое фото/скан JPG, PNG).</li>
+                <li><strong>Прикрепите скан ниже</strong> и нажмите «Отправить заявку в учебный центр».</li>
+            </ol>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+
+        <!-- ФОРМА ПРИКРЕПЛЕНИЯ СКАНА -->
+        <div>
+            <h3 style="color: var(--primary-color); margin-bottom: 15px;">Шаг 3. Прикрепление скан-копии с печатью</h3>
+
+            <form method="post" enctype="multipart/form-data">
+                {{ upload_form.hidden_tag() }}
+
+                <div class="form-group {% if upload_form.scan_file.errors %}has-error{% endif %}" style="margin-bottom: 25px;">
+                    <label style="font-weight: 700; font-size: 1rem; color: #334155;">
+                        {{ upload_form.scan_file.label }}
+                    </label>
+                    <div style="margin-top: 8px;">
+                        {{ upload_form.scan_file(class="form-control", style="padding: 12px; height: auto;") }}
+                    </div>
+                    <small style="color: #64748b; display: block; margin-top: 6px;">
+                        Поддерживаются файлы: PDF, JPG, PNG, TIFF. Максимальный размер: 30 МБ.
+                    </small>
+                    {% for err in upload_form.scan_file.errors %}
+                        <div class="error-message" style="margin-top: 5px;">{{ err }}</div>
+                    {% endfor %}
+                </div>
+
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn-success-action" style="font-size: 1.1rem; padding: 15px 32px;">
+                        ✓ Отправить подписанную заявку в УМЦ
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- БЛОК С ССЫЛКОЙ ДЛЯ ВОЗВРАТА -->
+    <div style="background: #fff; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 15px 20px; color: #64748b; font-size: 0.9rem;">
+        💡 <strong>Совет:</strong> Если подписание займет время, вы можете сохранить эту ссылку и вернуться для загрузки скана позже:
+        <br>
+        <code style="background: #f1f5f9; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 6px; word-break: break-all;">
+            {{ request.url_root }}apply/status/{{ application.secret_token }}
+        </code>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if auto_download %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // Автоматический старт скачивания документа Word при переходе с первого шага
+    setTimeout(() => {
+        const downloadUrl = "{{ url_for('apply.download_docx', token=application.secret_token) }}";
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        iframe.src = downloadUrl;
+        document.body.appendChild(iframe);
+    }, 500);
+});
+</script>
+{% endif %}
+{% endblock %}

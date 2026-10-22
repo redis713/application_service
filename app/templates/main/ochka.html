@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Очно-заочное обучение — Выбор направления{% endblock %}
+
+{% block nav_back %}
+<a href="{{ url_for('main.index') }}" style="color: #fff; text-decoration: none; font-weight: bold; padding: 8px 16px; border: 1px solid rgba(255,255,255,0.4); border-radius: 6px;">
+    ← Вернуться назад
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="container-mid" style="width: 100%; text-align: center; margin-top: 10px;">
+    <div class="hh2">
+        <span class="badge-status badge-submitted" style="margin-bottom: 10px;">Очно-заочное обучение</span>
+        <h2>Выберите направление обучения</h2>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 15px; align-items: center; margin-top: 25px; width: 100%;">
+        <a class="type_study_a" href="{{ url_for('apply.form_view', study_form='ochno', direction='gochs') }}" style="text-decoration: none; width: 100%; max-width: 550px;">
+            <div class="type_study_button" style="padding: 20px;">
+                Гражданская оборона и защита от ЧС (ГОЧС)
+            </div>
+        </a>
+
+        <a class="type_study_a" href="{{ url_for('apply.form_view', study_form='ochno', direction='fire') }}" style="text-decoration: none; width: 100%; max-width: 550px;">
+            <div class="type_study_button" style="padding: 20px;">
+                Пожарная безопасность
+            </div>
+        </a>
+
+        <a class="type_study_a" href="{{ url_for('apply.form_view', study_form='ochno', direction='112') }}" style="text-decoration: none; width: 100%; max-width: 550px;">
+            <div class="type_study_button" style="padding: 20px;">
+                Подготовка персонала системы 112
+            </div>
+        </a>
+
+        <a class="type_study_a" href="{{ url_for('apply.form_view', study_form='ochno', direction='antiterror') }}" style="text-decoration: none; width: 100%; max-width: 550px;">
+            <div class="type_study_button" style="padding: 20px;">
+                Антитеррористическая защищенность
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Страница не найдена (404){% endblock %}
+
+{% block content %}
+<div class="container-mid" style="width: 100%; text-align: center; margin-top: 50px;">
+    <h1 style="font-size: 4rem; color: var(--primary-color); margin-bottom: 10px;">404</h1>
+    <h2>Страница не найдена</h2>
+    <p style="color: #64748b; margin-bottom: 30px;">Возможно, ссылка устарела или была введена с ошибкой.</p>
+    <a href="{{ url_for('main.index') }}" class="btn-primary-action">Вернуться на главную страницу</a>
+</div>
+{% endblock %}

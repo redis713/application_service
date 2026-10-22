@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Подача заявок на обучение{% endblock %} — УМЦ ГОЧС и ПБ Иркутской области</title>
+
+    <!-- Стили -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tom-select.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <header class="header-banner">
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <div>
+                <h1>ГБУ ДПО «УМЦ ГОЧС и ПБ Иркутской области»</h1>
+                <p>Электронный сервис подачи заявок на дополнительное профессиональное образование</p>
+            </div>
+            {% block nav_back %}
+            {% endblock %}
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Флеш-сообщения об успехе / ошибках -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Скрипты -->
+    <script src="{{ url_for('static', filename='js/tom-select.complete.min.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

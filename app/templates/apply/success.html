@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Заявка {{ application.app_number }} принята{% endblock %}
+
+{% block content %}
+<div class="steps-wizard">
+    <div class="wizard-step completed">
+        <span class="circle">✓</span>
+        <span>Данные заполнены</span>
+    </div>
+    <div class="wizard-step completed">
+        <span class="circle">✓</span>
+        <span>Бланк сформирован</span>
+    </div>
+    <div class="wizard-step completed">
+        <span class="circle">✓</span>
+        <span>Скан прикреплен</span>
+    </div>
+</div>
+
+<div class="container-mid" style="width: 75%; margin-top: 10px;">
+    <div class="action-card" style="text-align: center; padding: 40px 30px;">
+        <div style="width: 70px; height: 70px; background: #d1fae5; color: #059669; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 20px auto;">
+            ✓
+        </div>
+
+        <span class="badge-status badge-accepted" style="font-size: 1rem; padding: 6px 18px;">
+            Заявка передана в учебный отдел
+        </span>
+
+        <h1 style="color: var(--primary-color); margin: 15px 0 10px 0; font-size: 2.2rem;">
+            Заявка {{ application.app_number }}
+        </h1>
+        <p style="color: #64748b; font-size: 1.1rem; margin-bottom: 30px;">
+            Спасибо! Все необходимые данные и скан заявления с подписью получены.
+        </p>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 25px; text-align: left; max-width: 600px; margin: 0 auto 30px auto;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+                <span style="color: #64748b;">Организация:</span>
+                <strong>{{ application.organization.full_name }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+                <span style="color: #64748b;">Направление:</span>
+                <strong>{{ application.direction_label }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+                <span style="color: #64748b;">Форма обучения:</span>
+                <strong>{{ application.study_form_label }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+                <span style="color: #64748b;">Количество слушателей:</span>
+                <strong>{{ application.listeners|length }} чел.</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+                <span style="color: #64748b;">Скан заявления:</span>
+                <span style="color: #059669; font-weight: bold;">Прикреплен ({{ application.signed_scan_filename }})</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: #64748b;">Дата и время подачи:</span>
+                <span>{{ application.submitted_at.strftime('%d.%m.%Y %H:%M') if application.submitted_at else 'Сегодня' }}</span>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <a href="{{ url_for('apply.download_docx', token=application.secret_token) }}" class="btn-primary-action">
+                📄 Скачать бланк заявления повторно
+            </a>
+            <a href="{{ url_for('main.index') }}" style="display: inline-flex; align-items: center; padding: 14px 24px; border: 2px solid #cbd5e1; border-radius: 8px; color: #475569; text-decoration: none; font-weight: 600;">
+                Подать еще одну заявку
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
