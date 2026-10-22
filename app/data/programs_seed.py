@@ -42,6 +42,11 @@ PROGRAMS_DATA = [
 
 def seed_programs():
     """Заполняет или обновляет базу данных утвержденными программами обучения."""
+    # Быстрая проверка: если программы уже засижены, не дергаем базу повторно
+    existing_count = Program.query.count()
+    if existing_count >= len(PROGRAMS_DATA):
+        return 0
+
     count = 0
     for p_data in PROGRAMS_DATA:
         prog = Program.query.filter_by(code=p_data["code"]).first()
