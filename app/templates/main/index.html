@@ -3,26 +3,28 @@
 {% block title %}Выбор формы обучения{% endblock %}
 
 {% block content %}
-<div class="container-mid" style="width: 100%; text-align: center; margin-top: 20px;">
+<div style="max-width: 850px; margin: 20px auto 0 auto; text-align: center;">
     <div class="hh2">
-        <h2>Выберите форму обучения</h2>
-        <p style="color: #64748b; font-size: 1.1rem; margin-top: 5px;">
-            Определите формат проведения занятий для ваших специалистов
+        <h2>Выберите форму проведения обучения</h2>
+        <p style="color: var(--text-muted); font-size: 1.05rem; margin-top: 8px;">
+            Определите удобный формат подготовки для специалистов вашей организации
         </p>
     </div>
 
-    <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 30px; width: 100%;">
-        <a class="type_study_a" href="{{ url_for('main.ochno') }}" style="text-decoration: none;">
-            <div class="type_study_button" style="min-width: 320px; padding: 25px 20px;">
-                <h3 style="margin: 0 0 10px 0; font-size: 1.3rem;">Очно-заочное обучение</h3>
-                <span style="font-size: 0.9rem; opacity: 0.85;">Очные занятия на базе учебного центра с практикой</span>
+    <div class="cards-grid">
+        <a class="type_study_a" href="{{ url_for('main.ochno') }}">
+            <div class="type_study_button">
+                <span class="badge-status badge-submitted" style="align-self: flex-start; margin-bottom: 12px;">Очно / Аудиторно</span>
+                <h3>Очно-заочное обучение</h3>
+                <span>Практические и теоретические занятия на базе учебно-методического центра с отработкой навыков на тренажерах</span>
             </div>
         </a>
 
-        <a class="type_study_a" href="{{ url_for('main.distant') }}" style="text-decoration: none;">
-            <div class="type_study_button" style="min-width: 320px; padding: 25px 20px;">
-                <h3 style="margin: 0 0 10px 0; font-size: 1.3rem;">Дистанционное обучение</h3>
-                <span style="font-size: 0.9rem; opacity: 0.85;">Обучение через портал СДО без выезда с рабочего места</span>
+        <a class="type_study_a" href="{{ url_for('main.distant') }}">
+            <div class="type_study_button">
+                <span class="badge-status badge-draft" style="align-self: flex-start; margin-bottom: 12px;">Онлайн / Без выезда</span>
+                <h3>Дистанционное обучение</h3>
+                <span>Освоение образовательной программы через портал СДО без отрыва от производственной деятельности</span>
             </div>
         </a>
     </div>

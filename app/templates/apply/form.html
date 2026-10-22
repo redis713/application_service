@@ -3,7 +3,7 @@
 {% block title %}Заявка: {{ direction_label }} ({{ study_form_label }}){% endblock %}
 
 {% block nav_back %}
-<a href="{{ url_for('main.index') }}" style="color: #fff; text-decoration: none; font-weight: bold; padding: 8px 16px; border: 1px solid rgba(255,255,255,0.4); border-radius: 6px;">
+<a href="{{ url_for('main.index') }}" style="color: #fff; text-decoration: none; font-weight: 600; font-size: 0.9rem; padding: 8px 16px; border: 1.5px solid rgba(255,255,255,0.4); border-radius: var(--radius-sm);">
     ← В начало
 </a>
 {% endblock %}
@@ -26,301 +26,304 @@
     </div>
 </div>
 
-<div class="hh2" style="width: 100%; text-align: center; margin-bottom: 25px;">
+<div class="hh2">
     <h2>{{ direction_label }}</h2>
-    <span class="badge-status badge-submitted">{{ study_form_label }}</span>
+    <span class="badge-status badge-submitted" style="margin-top: 8px;">{{ study_form_label }}</span>
 </div>
 
-<form method="post" class="main-form" id="application-form">
+<form method="post" id="application-form">
     {{ form.hidden_tag() }}
 
-    <!-- ШАГ 1: ДАННЫЕ ОРГАНИЗАЦИИ -->
-    <div class="step hh2" style="width: 100%;">
-        <hr>
-        <h1>Шаг 1. Данные направляющей организации</h1>
-    </div>
+    <div class="form-layout">
+        
+        <!-- ЛЕВАЯ КОЛОНКА (ОСНОВНОЙ КОНТЕНТ) -->
+        <div class="form-main-column">
 
-    <div class="container-mid" style="width: 65%;">
-        <div class="form-section" id="org_data" style="width: 100%;">
-            <h2>Реквизиты юридического лица / органа власти</h2>
-
-            <div class="form-group {% if form.organization_full_name.errors %}has-error{% endif %}">
-                {{ form.organization_full_name.label }}<br>
-                {{ form.organization_full_name(class="form-control", placeholder="Полное наименование по ЕГРЮЛ/Уставу") }}
-                {% for err in form.organization_full_name.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            <!-- ШАГ 1: ОРГАНИЗАЦИЯ -->
+            <div class="step-divider">
+                <h2>Шаг 1. Данные направляющей организации</h2>
+                <p>Укажите официальные реквизиты юридического лица или органа местного самоуправления</p>
             </div>
 
-            <div class="form-group {% if form.organization_short_name.errors %}has-error{% endif %}">
-                {{ form.organization_short_name.label }}<br>
-                {{ form.organization_short_name(class="form-control", placeholder="Сокращенное наименование") }}
-                {% for err in form.organization_short_name.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+            <div class="form-card" id="org_data">
+                <h3>Реквизиты юридического лица</h3>
+
+                <div class="form-group {% if form.organization_full_name.errors %}has-error{% endif %}">
+                    {{ form.organization_full_name.label }}
+                    {{ form.organization_full_name(class="form-control", placeholder="Полное наименование по ЕГРЮЛ / Уставу") }}
+                    {% for err in form.organization_full_name.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                </div>
+
+                <div class="form-group {% if form.organization_short_name.errors %}has-error{% endif %}">
+                    {{ form.organization_short_name.label }}
+                    {{ form.organization_short_name(class="form-control", placeholder="Сокращенное наименование") }}
+                    {% for err in form.organization_short_name.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-1 {% if form.inn.errors %}has-error{% endif %}">
+                        {{ form.inn.label }}
+                        {{ form.inn(class="form-control", placeholder="10 или 12 цифр") }}
+                        {% for err in form.inn.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                    <div class="form-group col-1 {% if form.kpp.errors %}has-error{% endif %}">
+                        {{ form.kpp.label }}
+                        {{ form.kpp(class="form-control", placeholder="9 цифр (для юрлиц)") }}
+                        {% for err in form.kpp.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                    <div class="form-group col-1 {% if form.ogrn.errors %}has-error{% endif %}">
+                        {{ form.ogrn.label }}
+                        {{ form.ogrn(class="form-control", placeholder="13 или 15 цифр") }}
+                        {% for err in form.ogrn.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-2 {% if form.bank_name.errors %}has-error{% endif %}">
+                        {{ form.bank_name.label }}
+                        {{ form.bank_name(class="form-control", placeholder="Наименование банка") }}
+                        {% for err in form.bank_name.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                    <div class="form-group col-1 {% if form.bik.errors %}has-error{% endif %}">
+                        {{ form.bik.label }}
+                        {{ form.bik(class="form-control", placeholder="9 цифр") }}
+                        {% for err in form.bik.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-group {% if form.rasch_schot.errors %}has-error{% endif %}">
+                    {{ form.rasch_schot.label }}
+                    {{ form.rasch_schot(class="form-control", placeholder="20 цифр расчетного счета") }}
+                    {% for err in form.rasch_schot.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                </div>
+
+                <h3>Руководитель организации</h3>
+                <div class="form-row">
+                    <div class="form-group col-1 {% if form.boss_lastname.errors %}has-error{% endif %}">
+                        {{ form.boss_lastname.label }}
+                        {{ form.boss_lastname(class="form-control") }}
+                        {% for err in form.boss_lastname.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                    <div class="form-group col-1 {% if form.boss_firstname.errors %}has-error{% endif %}">
+                        {{ form.boss_firstname.label }}
+                        {{ form.boss_firstname(class="form-control") }}
+                        {% for err in form.boss_firstname.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                    <div class="form-group col-1 {% if form.boss_patronymic.errors %}has-error{% endif %}">
+                        {{ form.boss_patronymic.label }}
+                        {{ form.boss_patronymic(class="form-control") }}
+                        {% for err in form.boss_patronymic.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-1 {% if form.doljnost_boss.errors %}has-error{% endif %}">
+                        {{ form.doljnost_boss.label }}
+                        {{ form.doljnost_boss(class="form-control", placeholder="Генеральный директор, Мэр...") }}
+                        {% for err in form.doljnost_boss.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                    <div class="form-group col-1 {% if form.polnamochia_boss.errors %}has-error{% endif %}">
+                        {{ form.polnamochia_boss.label }}
+                        {{ form.polnamochia_boss(class="form-control", placeholder="Устава, Положения, Доверенности №...") }}
+                        {% for err in form.polnamochia_boss.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                </div>
+
+                <h3>Адреса и контакты</h3>
+                <div class="form-group {% if form.yur_address.errors %}has-error{% endif %}">
+                    {{ form.yur_address.label }}
+                    {{ form.yur_address(class="form-control", placeholder="Юридический адрес") }}
+                    {% for err in form.yur_address.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                </div>
+                <div class="form-group {% if form.fakt_address.errors %}has-error{% endif %}">
+                    {{ form.fakt_address.label }}
+                    {{ form.fakt_address(class="form-control", placeholder="Фактический адрес") }}
+                    {% for err in form.fakt_address.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-1 {% if form.telephone.errors %}has-error{% endif %}">
+                        {{ form.telephone.label }}
+                        {{ form.telephone(class="form-control", placeholder="+7 (___) ___-__-__") }}
+                        {% for err in form.telephone.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                    <div class="form-group col-1 {% if form.email.errors %}has-error{% endif %}">
+                        {{ form.email.label }}
+                        {{ form.email(class="form-control", placeholder="org@mail.ru") }}
+                        {% for err in form.email.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                </div>
+
+                <h3>Ответственный исполнитель (составитель заявки)</h3>
+                <div class="form-row">
+                    <div class="form-group col-1 {% if form.fio_executor.errors %}has-error{% endif %}">
+                        {{ form.fio_executor.label }}
+                        {{ form.fio_executor(class="form-control", placeholder="ФИО сотрудника") }}
+                        {% for err in form.fio_executor.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                    <div class="form-group col-1 {% if form.doljnost_executor.errors %}has-error{% endif %}">
+                        {{ form.doljnost_executor.label }}
+                        {{ form.doljnost_executor(class="form-control", placeholder="Специалист по кадрам...") }}
+                        {% for err in form.doljnost_executor.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                    <div class="form-group col-1 {% if form.telephone_executor.errors %}has-error{% endif %}">
+                        {{ form.telephone_executor.label }}
+                        {{ form.telephone_executor(class="form-control", placeholder="+7 (___) ___-__-__") }}
+                        {% for err in form.telephone_executor.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                    </div>
+                </div>
             </div>
 
-            <div style="display: flex; gap: 15px; width: 100%;">
-                <div class="form-group {% if form.inn.errors %}has-error{% endif %}" style="flex: 1;">
-                    {{ form.inn.label }}<br>
-                    {{ form.inn(class="form-control", placeholder="10 или 12 цифр") }}
-                    {% for err in form.inn.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-                <div class="form-group {% if form.kpp.errors %}has-error{% endif %}" style="flex: 1;">
-                    {{ form.kpp.label }}<br>
-                    {{ form.kpp(class="form-control", placeholder="9 цифр (для юрлиц)") }}
-                    {% for err in form.kpp.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-                <div class="form-group {% if form.ogrn.errors %}has-error{% endif %}" style="flex: 1;">
-                    {{ form.ogrn.label }}<br>
-                    {{ form.ogrn(class="form-control", placeholder="13 или 15 цифр") }}
-                    {% for err in form.ogrn.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
+            <!-- ШАГ 2: СЛУШАТЕЛИ -->
+            <div class="step-divider">
+                <h2>Шаг 2. Данные слушателей (сотрудников)</h2>
+                <p>Сведения о направляемых работниках и документы об образовании для ФИС ФРДО</p>
             </div>
 
-            <div style="display: flex; gap: 15px; width: 100%;">
-                <div class="form-group {% if form.bank_name.errors %}has-error{% endif %}" style="flex: 2;">
-                    {{ form.bank_name.label }}<br>
-                    {{ form.bank_name(class="form-control", placeholder="Наименование банка") }}
-                    {% for err in form.bank_name.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-                <div class="form-group {% if form.bik.errors %}has-error{% endif %}" style="flex: 1;">
-                    {{ form.bik.label }}<br>
-                    {{ form.bik(class="form-control", placeholder="БИК банка (9 цифр)") }}
-                    {% for err in form.bik.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-            </div>
-
-            <div class="form-group {% if form.rasch_schot.errors %}has-error{% endif %}">
-                {{ form.rasch_schot.label }}<br>
-                {{ form.rasch_schot(class="form-control", placeholder="Расчетный счет (20 цифр)") }}
-                {% for err in form.rasch_schot.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-            </div>
-
-            <h3 style="margin-top: 25px; color: var(--primary-color);">Руководитель организации</h3>
-            <div style="display: flex; gap: 15px; width: 100%;">
-                <div class="form-group {% if form.boss_lastname.errors %}has-error{% endif %}" style="flex: 1;">
-                    {{ form.boss_lastname.label }}<br>
-                    {{ form.boss_lastname(class="form-control") }}
-                    {% for err in form.boss_lastname.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-                <div class="form-group {% if form.boss_firstname.errors %}has-error{% endif %}" style="flex: 1;">
-                    {{ form.boss_firstname.label }}<br>
-                    {{ form.boss_firstname(class="form-control") }}
-                    {% for err in form.boss_firstname.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-                <div class="form-group {% if form.boss_patronymic.errors %}has-error{% endif %}" style="flex: 1;">
-                    {{ form.boss_patronymic.label }}<br>
-                    {{ form.boss_patronymic(class="form-control") }}
-                    {% for err in form.boss_patronymic.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-            </div>
-
-            <div style="display: flex; gap: 15px; width: 100%;">
-                <div class="form-group {% if form.doljnost_boss.errors %}has-error{% endif %}" style="flex: 1;">
-                    {{ form.doljnost_boss.label }}<br>
-                    {{ form.doljnost_boss(class="form-control", placeholder="Генеральный директор, Мэр...") }}
-                    {% for err in form.doljnost_boss.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-                <div class="form-group {% if form.polnamochia_boss.errors %}has-error{% endif %}" style="flex: 1;">
-                    {{ form.polnamochia_boss.label }}<br>
-                    {{ form.polnamochia_boss(class="form-control", placeholder="Устава, Положения, Доверенности №...") }}
-                    {% for err in form.polnamochia_boss.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-            </div>
-
-            <h3 style="margin-top: 25px; color: var(--primary-color);">Адреса и контакты</h3>
-            <div class="form-group {% if form.yur_address.errors %}has-error{% endif %}">
-                {{ form.yur_address.label }}<br>
-                {{ form.yur_address(class="form-control", placeholder="Индекс, область, город, улица, дом") }}
-                {% for err in form.yur_address.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-            </div>
-            <div class="form-group {% if form.fakt_address.errors %}has-error{% endif %}">
-                {{ form.fakt_address.label }}<br>
-                {{ form.fakt_address(class="form-control", placeholder="Фактический адрес") }}
-                {% for err in form.fakt_address.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-            </div>
-
-            <div style="display: flex; gap: 15px; width: 100%;">
-                <div class="form-group {% if form.telephone.errors %}has-error{% endif %}" style="flex: 1;">
-                    {{ form.telephone.label }}<br>
-                    {{ form.telephone(class="form-control", placeholder="+7 (___) ___-__-__") }}
-                    {% for err in form.telephone.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-                <div class="form-group {% if form.email.errors %}has-error{% endif %}" style="flex: 1;">
-                    {{ form.email.label }}<br>
-                    {{ form.email(class="form-control", placeholder="org@mail.ru") }}
-                    {% for err in form.email.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-            </div>
-
-            <h3 style="margin-top: 25px; color: var(--primary-color);">Контактное лицо (Исполнитель заявки)</h3>
-            <div style="display: flex; gap: 15px; width: 100%;">
-                <div class="form-group {% if form.fio_executor.errors %}has-error{% endif %}" style="flex: 1;">
-                    {{ form.fio_executor.label }}<br>
-                    {{ form.fio_executor(class="form-control", placeholder="ФИО сотрудника, заполнившего заявку") }}
-                    {% for err in form.fio_executor.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-                <div class="form-group {% if form.doljnost_executor.errors %}has-error{% endif %}" style="flex: 1;">
-                    {{ form.doljnost_executor.label }}<br>
-                    {{ form.doljnost_executor(class="form-control", placeholder="Специалист по кадрам, инженер...") }}
-                    {% for err in form.doljnost_executor.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-                <div class="form-group {% if form.telephone_executor.errors %}has-error{% endif %}" style="flex: 1;">
-                    {{ form.telephone_executor.label }}<br>
-                    {{ form.telephone_executor(class="form-control", placeholder="+7 (___) ___-__-__") }}
-                    {% for err in form.telephone_executor.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- ШАГ 2: ДАННЫЕ СЛУШАТЕЛЕЙ -->
-    <div class="step hh2" style="width: 100%;">
-        <hr>
-        <h1>Шаг 2. Данные слушателей (сотрудников)</h1>
-        <p style="color: #64748b; font-size: 0.95rem;">Укажите сведения о сотрудниках для внесения в единый реестр ФИС ФРДО</p>
-    </div>
-
-    <div class="container-left" style="width: 70%;">
-        <div class="form-section" id="student_data" style="width: 100%;">
             <div id="students-container">
                 {% for student_form in form.students %}
                 {% set s_idx = loop.index0 %}
-                <div class="student-form" data-student-index="{{ s_idx }}" id="student-{{ s_idx }}">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--blue-color); padding-bottom: 8px; margin-bottom: 20px;">
-                        <div class="counter" style="font-size: 1.2rem; font-weight: bold; color: var(--primary-color);">
-                            Слушатель № {{ loop.index }}
-                        </div>
-                        <div class="destroy_button" onclick="removeStudentBlock(this)" title="Удалить слушателя" style="cursor: pointer; color: red; font-weight: bold; padding: 4px 10px; border: 2px solid red; border-radius: 8px;">
-                            ✕ Удалить
-                        </div>
+                <div class="student-card" data-student-index="{{ s_idx }}" id="student-{{ s_idx }}">
+                    
+                    <div class="student-header">
+                        <div class="counter">Слушатель № {{ loop.index }}</div>
+                        <button type="button" class="btn-remove" onclick="removeStudentBlock(this)">
+                            ✕ Удалить слушателя
+                        </button>
                     </div>
 
-                    <div style="display: flex; gap: 15px; width: 100%;">
-                        <div class="form-group {% if student_form.student_lastname.errors %}has-error{% endif %}" style="flex: 1;">
-                            {{ student_form.student_lastname.label }}<br>
+                    <div class="form-row">
+                        <div class="form-group col-1 {% if student_form.student_lastname.errors %}has-error{% endif %}">
+                            {{ student_form.student_lastname.label }}
                             {{ student_form.student_lastname(class="form-control student-fio-input") }}
                             {% for err in student_form.student_lastname.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
-                        <div class="form-group {% if student_form.student_firstname.errors %}has-error{% endif %}" style="flex: 1;">
-                            {{ student_form.student_firstname.label }}<br>
+                        <div class="form-group col-1 {% if student_form.student_firstname.errors %}has-error{% endif %}">
+                            {{ student_form.student_firstname.label }}
                             {{ student_form.student_firstname(class="form-control student-fio-input") }}
                             {% for err in student_form.student_firstname.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
-                        <div class="form-group {% if student_form.student_patronymic.errors %}has-error{% endif %}" style="flex: 1;">
-                            {{ student_form.student_patronymic.label }}<br>
+                        <div class="form-group col-1 {% if student_form.student_patronymic.errors %}has-error{% endif %}">
+                            {{ student_form.student_patronymic.label }}
                             {{ student_form.student_patronymic(class="form-control student-fio-input") }}
                             {% for err in student_form.student_patronymic.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 15px; width: 100%;">
-                        <div class="form-group {% if student_form.student_birthdate.errors %}has-error{% endif %}" style="flex: 1;">
-                            {{ student_form.student_birthdate.label }}<br>
+                    <div class="form-row">
+                        <div class="form-group col-1 {% if student_form.student_birthdate.errors %}has-error{% endif %}">
+                            {{ student_form.student_birthdate.label }}
                             {{ student_form.student_birthdate(class="form-control", type="date") }}
                             {% for err in student_form.student_birthdate.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
-                        <div class="form-group {% if student_form.citizenship.errors %}has-error{% endif %}" style="flex: 1;">
-                            {{ student_form.citizenship.label }}<br>
+                        <div class="form-group col-1 {% if student_form.citizenship.errors %}has-error{% endif %}">
+                            {{ student_form.citizenship.label }}
                             {{ student_form.citizenship(class="form-control") }}
                             {% for err in student_form.citizenship.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
-                        <div class="form-group {% if student_form.student_position.errors %}has-error{% endif %}" style="flex: 1;">
-                            {{ student_form.student_position.label }}<br>
-                            {{ student_form.student_position(class="form-control", placeholder="Должность в организации") }}
+                        <div class="form-group col-1 {% if student_form.student_position.errors %}has-error{% endif %}">
+                            {{ student_form.student_position.label }}
+                            {{ student_form.student_position(class="form-control", placeholder="Должность") }}
                             {% for err in student_form.student_position.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
                     </div>
 
-                    <h4 style="margin-top: 15px; color: #475569;">Базовое профессиональное образование</h4>
-                    <div style="display: flex; gap: 15px; width: 100%;">
-                        <div class="form-group {% if student_form.education.errors %}has-error{% endif %}" style="flex: 1;">
-                            {{ student_form.education.label }}<br>
+                    <h4 style="margin: 18px 0 10px 0; color: #475569; font-size: 0.95rem;">Базовое профессиональное образование</h4>
+                    
+                    <div class="form-row">
+                        <div class="form-group col-1 {% if student_form.education.errors %}has-error{% endif %}">
+                            {{ student_form.education.label }}
                             {{ student_form.education(class="form-control") }}
                             {% for err in student_form.education.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
-                        <div class="form-group {% if student_form.institute_name.errors %}has-error{% endif %}" style="flex: 2;">
-                            {{ student_form.institute_name.label }}<br>
+                        <div class="form-group col-2 {% if student_form.institute_name.errors %}has-error{% endif %}">
+                            {{ student_form.institute_name.label }}
                             {{ student_form.institute_name(class="form-control", placeholder="Наименование ВУЗа/колледжа") }}
                             {% for err in student_form.institute_name.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 15px; width: 100%;">
-                        <div class="form-group {% if student_form.diploma_seriesnumber.errors %}has-error{% endif %}" style="flex: 1;">
-                            {{ student_form.diploma_seriesnumber.label }}<br>
-                            {{ student_form.diploma_seriesnumber(class="form-control", placeholder="Серия и номер диплома") }}
+                    <div class="form-row">
+                        <div class="form-group col-1 {% if student_form.diploma_seriesnumber.errors %}has-error{% endif %}">
+                            {{ student_form.diploma_seriesnumber.label }}
+                            {{ student_form.diploma_seriesnumber(class="form-control", placeholder="Серия и номер") }}
                             {% for err in student_form.diploma_seriesnumber.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
-                        <div class="form-group {% if student_form.diploma_date.errors %}has-error{% endif %}" style="flex: 1;">
-                            {{ student_form.diploma_date.label }}<br>
+                        <div class="form-group col-1 {% if student_form.diploma_date.errors %}has-error{% endif %}">
+                            {{ student_form.diploma_date.label }}
                             {{ student_form.diploma_date(class="form-control", placeholder="дд.мм.гггг") }}
                             {% for err in student_form.diploma_date.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
-                        <div class="form-group {% if student_form.diploma_lastname.errors %}has-error{% endif %}" style="flex: 1;">
-                            {{ student_form.diploma_lastname.label }}<br>
+                        <div class="form-group col-1 {% if student_form.diploma_lastname.errors %}has-error{% endif %}">
+                            {{ student_form.diploma_lastname.label }}
                             {{ student_form.diploma_lastname(class="form-control", placeholder="Фамилия в дипломе") }}
                             {% for err in student_form.diploma_lastname.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 15px; width: 100%;">
-                        <div class="form-group {% if student_form.snils.errors %}has-error{% endif %}" style="flex: 1;">
-                            {{ student_form.snils.label }}<br>
+                    <div class="form-row">
+                        <div class="form-group col-1 {% if student_form.snils.errors %}has-error{% endif %}">
+                            {{ student_form.snils.label }}
                             {{ student_form.snils(class="form-control", placeholder="123-456-789 01") }}
                             {% for err in student_form.snils.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
-                        <div class="form-group {% if student_form.student_telephone.errors %}has-error{% endif %}" style="flex: 1;">
-                            {{ student_form.student_telephone.label }}<br>
+                        <div class="form-group col-1 {% if student_form.student_telephone.errors %}has-error{% endif %}">
+                            {{ student_form.student_telephone.label }}
                             {{ student_form.student_telephone(class="form-control", placeholder="+7 (___) ___-__-__") }}
                             {% for err in student_form.student_telephone.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
-                        <div class="form-group {% if student_form.student_email.errors %}has-error{% endif %}" style="flex: 1;">
-                            {{ student_form.student_email.label }}<br>
+                        <div class="form-group col-1 {% if student_form.student_email.errors %}has-error{% endif %}">
+                            {{ student_form.student_email.label }}
                             {{ student_form.student_email(class="form-control", placeholder="student@mail.ru") }}
                             {% for err in student_form.student_email.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
                     </div>
 
-                    <!-- ПРОГРАММЫ ОБУЧЕНИЯ СЛУШАТЕЛЯ -->
-                    <div class="form-group categories" style="margin-top: 15px;">
-                        <label style="font-weight: 700; color: var(--primary-color);">Программы обучения для данного слушателя</label>
+                    <!-- ПРОГРАММЫ СЛУШАТЕЛЯ -->
+                    <div class="categories-wrapper">
+                        <label style="font-weight: 700; color: var(--primary); display: block; margin-bottom: 10px;">
+                            Программы обучения для данного слушателя
+                        </label>
+
                         <div class="categories-container">
                             {% for cat_form in student_form.student_categories %}
                             <div class="category-row">
                                 <div class="category-content">
-                                    <div style="width: 100%; margin-bottom: 10px;">
+                                    <div style="margin-bottom: 10px;">
                                         {{ cat_form.category(class="form-control category-select") }}
                                         {% for err in cat_form.category.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                                     </div>
-                                    <div style="display: flex; gap: 15px; width: 100%;">
-                                        <div class="category-date" style="flex: 1;">
-                                            <div class="category-date-text">Дата начала</div>
-                                            {{ cat_form.start_date(type="date", class="form-control date-study") }}
+                                    <div class="form-row">
+                                        <div class="form-group col-1">
+                                            <label style="font-size: 0.8rem; color: var(--text-muted);">Дата начала</label>
+                                            {{ cat_form.start_date(type="date", class="form-control") }}
                                             {% for err in cat_form.start_date.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                                         </div>
-                                        <div class="category-date" style="flex: 1;">
-                                            <div class="category-date-text">Дата окончания</div>
-                                            {{ cat_form.end_date(type="date", class="form-control date-study") }}
+                                        <div class="form-group col-1">
+                                            <label style="font-size: 0.8rem; color: var(--text-muted);">Дата окончания</label>
+                                            {{ cat_form.end_date(type="date", class="form-control") }}
                                             {% for err in cat_form.end_date.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                                         </div>
                                     </div>
                                 </div>
-                                <div class="remove-category-button" onclick="removeCategoryRow(this)" title="Удалить программу">-</div>
+                                <button type="button" class="btn-remove-category" onclick="removeCategoryRow(this)" title="Удалить программу">✕</button>
                             </div>
                             {% endfor %}
                         </div>
 
-                        <div class="add-category-button" onclick="addCategoryRow(this)">
+                        <button type="button" class="btn-add-category" onclick="addCategoryRow(this)">
                             + Добавить программу обучения
-                        </div>
+                        </button>
                     </div>
 
-                    <div style="display: flex; gap: 15px; width: 100%; margin-top: 15px;">
-                        <div class="form-group" style="flex: 1;">
-                            {{ student_form.diploma_delivery.label }}<br>
+                    <!-- ДОСТАВКА ДИПЛОМА -->
+                    <div class="form-row">
+                        <div class="form-group col-1">
+                            {{ student_form.diploma_delivery.label }}
                             {{ student_form.diploma_delivery(class="form-control delivery-select", onchange="toggleDeliveryAddress(this)") }}
                         </div>
-                        <div class="form-group delivery-address-group" style="flex: 2; display: none;">
-                            {{ student_form.delivery_address.label }}<br>
+                        <div class="form-group col-2 delivery-address-group" style="display: none;">
+                            {{ student_form.delivery_address.label }}
                             {{ student_form.delivery_address(class="form-control", placeholder="Почтовый адрес для отправки удостоверения") }}
                         </div>
                     </div>
@@ -329,45 +332,44 @@
                 {% endfor %}
             </div>
 
-            <div class="add_button_container" style="margin-top: 25px;">
-                <button type="button" id="add_student_btn" class="btn-primary-action" onclick="addNewStudent()">
+            <div style="margin: 20px 0 40px 0;">
+                <button type="button" class="btn-primary-action" onclick="addNewStudent()">
                     + Добавить еще одного слушателя
                 </button>
             </div>
-        </div>
-    </div>
 
-    <!-- ПРАВАЯ ПАНЕЛЬ НАВИГАЦИИ -->
-    <div class="container-right" style="width: 25%;">
-        <div class="navigation" id="navigation">
-            <div class="navigation-title"><h3>Список слушателей</h3></div>
-            <div id="navigation-items">
-                <!-- Заполняется автоматически на JS -->
+            <!-- ШАГ 3: ФОРМИРОВАНИЕ -->
+            <div class="step-divider">
+                <h2>Шаг 3. Формирование официального документа</h2>
             </div>
+
+            <div class="action-card" style="text-align: center; padding: 36px 24px;">
+                <button type="submit" class="btn-primary-action" style="font-size: 1.15rem; padding: 16px 36px;">
+                    📄 Сформировать печатную форму (.docx) и перейти к загрузке скана →
+                </button>
+                <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 14px;">
+                    Система зафиксирует черновик заявки и сгенерирует готовый файл Word для распечатки, подписи руководителем и заверения печатью.
+                </p>
+            </div>
+
         </div>
-    </div>
 
-    <!-- КНОПКА ОТПРАВКИ И ГЕНЕРАЦИИ -->
-    <div class="step hh2" style="width: 100%;">
-        <hr>
-        <h1>Шаг 3. Формирование официального документа</h1>
-    </div>
+        <!-- ПРАВАЯ КОЛОНКА (НАВИГАЦИЯ STICKY) -->
+        <aside class="form-sidebar">
+            <div class="navigation-box">
+                <div class="navigation-title">Список слушателей</div>
+                <div class="navigation-list" id="navigation-items">
+                    <!-- Заполняется автоматически на JS -->
+                </div>
+            </div>
+        </aside>
 
-    <div class="container-mid" style="width: 100%; text-align: center; margin-bottom: 50px;">
-        <button type="submit" class="btn-primary-action" style="font-size: 1.15rem; padding: 16px 36px;">
-            📄 Сформировать печатную форму (.docx) и перейти к загрузке скана →
-        </button>
-        <p style="color: #64748b; font-size: 0.95rem; margin-top: 12px;">
-            После нажатия система сохранит заявку и выдаст заполненный файл Word для распечатки, подписи руководителем и заверения печатью.
-        </p>
     </div>
-
 </form>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Варианты программ обучения для динамических строк
 const PROGRAM_CHOICES = {{ program_choices | tojson }};
 
 function initTomSelect(el) {
@@ -375,7 +377,7 @@ function initTomSelect(el) {
     new TomSelect(el, {
         create: false,
         closeAfterSelect: true,
-        placeholder: "Выберите программу...",
+        placeholder: "Выберите программу обучения...",
         onItemAdd: function() { this.blur(); }
     });
 }
@@ -384,7 +386,7 @@ function updateNavigation() {
     const navContainer = document.getElementById("navigation-items");
     navContainer.innerHTML = "";
 
-    const studentCards = document.querySelectorAll(".student-form");
+    const studentCards = document.querySelectorAll(".student-card");
     studentCards.forEach((card, idx) => {
         const ln = card.querySelector('[name$="-student_lastname"]')?.value || "";
         const fn = card.querySelector('[name$="-student_firstname"]')?.value || "";
@@ -393,20 +395,19 @@ function updateNavigation() {
         const a = document.createElement("a");
         a.href = `#student-${idx}`;
         a.className = "navigation-item";
-        a.innerHTML = `<div class="navigation-row">${idx + 1}. ${fio}</div>`;
+        a.textContent = `${idx + 1}. ${fio}`;
         navContainer.appendChild(a);
     });
 }
 
 function reindexAll() {
-    const students = document.querySelectorAll(".student-form");
+    const students = document.querySelectorAll(".student-card");
     students.forEach((student, sIdx) => {
         student.id = `student-${sIdx}`;
         student.dataset.studentIndex = sIdx;
         const counter = student.querySelector(".counter");
         if (counter) counter.textContent = `Слушатель № ${sIdx + 1}`;
 
-        // Обновляем имена полей студента
         student.querySelectorAll("input, select, textarea").forEach(field => {
             if (field.name) {
                 field.name = field.name.replace(/students-\d+-/, `students-${sIdx}-`);
@@ -416,7 +417,6 @@ function reindexAll() {
             }
         });
 
-        // Обновляем категории внутри студента
         const catRows = student.querySelectorAll(".category-row");
         catRows.forEach((row, cIdx) => {
             row.querySelectorAll("select, input").forEach(field => {
@@ -433,7 +433,7 @@ function reindexAll() {
 }
 
 function toggleDeliveryAddress(selectEl) {
-    const row = selectEl.closest(".student-form");
+    const row = selectEl.closest(".student-card");
     const addrGroup = row.querySelector(".delivery-address-group");
     if (addrGroup) {
         addrGroup.style.display = selectEl.value === "mail" ? "block" : "none";
@@ -446,8 +446,7 @@ function removeStudentBlock(btn) {
         alert("В заявке должен быть указан хотя бы один слушатель.");
         return;
     }
-    const card = btn.closest(".student-form");
-    card.remove();
+    btn.closest(".student-card").remove();
     reindexAll();
 }
 
@@ -462,8 +461,8 @@ function removeCategoryRow(btn) {
 }
 
 function addCategoryRow(btn) {
-    const catContainer = btn.closest(".categories").querySelector(".categories-container");
-    const sIdx = btn.closest(".student-form").dataset.studentIndex || 0;
+    const catContainer = btn.closest(".categories-wrapper").querySelector(".categories-container");
+    const sIdx = btn.closest(".student-card").dataset.studentIndex || 0;
     const cIdx = catContainer.children.length;
 
     let optionsHtml = '';
@@ -475,23 +474,23 @@ function addCategoryRow(btn) {
     div.className = "category-row";
     div.innerHTML = `
         <div class="category-content">
-            <div style="width: 100%; margin-bottom: 10px;">
+            <div style="margin-bottom: 10px;">
                 <select name="students-${sIdx}-student_categories-${cIdx}-category" class="form-control category-select" required>
                     ${optionsHtml}
                 </select>
             </div>
-            <div style="display: flex; gap: 15px; width: 100%;">
-                <div class="category-date" style="flex: 1;">
-                    <div class="category-date-text">Дата начала</div>
-                    <input type="date" name="students-${sIdx}-student_categories-${cIdx}-start_date" class="form-control date-study" required>
+            <div class="form-row">
+                <div class="form-group col-1">
+                    <label style="font-size: 0.8rem; color: var(--text-muted);">Дата начала</label>
+                    <input type="date" name="students-${sIdx}-student_categories-${cIdx}-start_date" class="form-control" required>
                 </div>
-                <div class="category-date" style="flex: 1;">
-                    <div class="category-date-text">Дата окончания</div>
-                    <input type="date" name="students-${sIdx}-student_categories-${cIdx}-end_date" class="form-control date-study" required>
+                <div class="form-group col-1">
+                    <label style="font-size: 0.8rem; color: var(--text-muted);">Дата окончания</label>
+                    <input type="date" name="students-${sIdx}-student_categories-${cIdx}-end_date" class="form-control" required>
                 </div>
             </div>
         </div>
-        <div class="remove-category-button" onclick="removeCategoryRow(this)" title="Удалить программу">-</div>
+        <button type="button" class="btn-remove-category" onclick="removeCategoryRow(this)" title="Удалить программу">✕</button>
     `;
 
     catContainer.appendChild(div);
@@ -509,54 +508,52 @@ function addNewStudent() {
     });
 
     const studentDiv = document.createElement("div");
-    studentDiv.className = "student-form";
+    studentDiv.className = "student-card";
     studentDiv.id = `student-${sIdx}`;
     studentDiv.dataset.studentIndex = sIdx;
 
     studentDiv.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--blue-color); padding-bottom: 8px; margin-bottom: 20px;">
-            <div class="counter" style="font-size: 1.2rem; font-weight: bold; color: var(--primary-color);">
-                Слушатель № ${sIdx + 1}
-            </div>
-            <div class="destroy_button" onclick="removeStudentBlock(this)" title="Удалить слушателя" style="cursor: pointer; color: red; font-weight: bold; padding: 4px 10px; border: 2px solid red; border-radius: 8px;">
-                ✕ Удалить
-            </div>
+        <div class="student-header">
+            <div class="counter">Слушатель № ${sIdx + 1}</div>
+            <button type="button" class="btn-remove" onclick="removeStudentBlock(this)">
+                ✕ Удалить слушателя
+            </button>
         </div>
 
-        <div style="display: flex; gap: 15px; width: 100%;">
-            <div class="form-group" style="flex: 1;">
-                <label>Фамилия</label><br>
+        <div class="form-row">
+            <div class="form-group col-1">
+                <label>Фамилия</label>
                 <input type="text" name="students-${sIdx}-student_lastname" class="form-control student-fio-input" required>
             </div>
-            <div class="form-group" style="flex: 1;">
-                <label>Имя</label><br>
+            <div class="form-group col-1">
+                <label>Имя</label>
                 <input type="text" name="students-${sIdx}-student_firstname" class="form-control student-fio-input" required>
             </div>
-            <div class="form-group" style="flex: 1;">
-                <label>Отчество</label><br>
+            <div class="form-group col-1">
+                <label>Отчество</label>
                 <input type="text" name="students-${sIdx}-student_patronymic" class="form-control student-fio-input">
             </div>
         </div>
 
-        <div style="display: flex; gap: 15px; width: 100%;">
-            <div class="form-group" style="flex: 1;">
-                <label>Дата рождения</label><br>
+        <div class="form-row">
+            <div class="form-group col-1">
+                <label>Дата рождения</label>
                 <input type="date" name="students-${sIdx}-student_birthdate" class="form-control" required>
             </div>
-            <div class="form-group" style="flex: 1;">
-                <label>Гражданство</label><br>
+            <div class="form-group col-1">
+                <label>Гражданство</label>
                 <input type="text" name="students-${sIdx}-citizenship" class="form-control" value="РФ" required>
             </div>
-            <div class="form-group" style="flex: 1;">
-                <label>Должность в организации</label><br>
+            <div class="form-group col-1">
+                <label>Должность в организации</label>
                 <input type="text" name="students-${sIdx}-student_position" class="form-control" placeholder="Должность" required>
             </div>
         </div>
 
-        <h4 style="margin-top: 15px; color: #475569;">Базовое профессиональное образование</h4>
-        <div style="display: flex; gap: 15px; width: 100%;">
-            <div class="form-group" style="flex: 1;">
-                <label>Уровень образования</label><br>
+        <h4 style="margin: 18px 0 10px 0; color: #475569; font-size: 0.95rem;">Базовое профессиональное образование</h4>
+        <div class="form-row">
+            <div class="form-group col-1">
+                <label>Уровень образования</label>
                 <select name="students-${sIdx}-education" class="form-control" required>
                     <option value="">Выберите уровень образования</option>
                     <option value="Высшее образование">Высшее образование</option>
@@ -564,81 +561,83 @@ function addNewStudent() {
                     <option value="Неоконченное высшее (студент)">Неоконченное высшее (справка об обучении)</option>
                 </select>
             </div>
-            <div class="form-group" style="flex: 2;">
-                <label>Наименование учебного заведения</label><br>
+            <div class="form-group col-2">
+                <label>Наименование учебного заведения</label>
                 <input type="text" name="students-${sIdx}-institute_name" class="form-control" placeholder="Наименование ВУЗа/колледжа" required>
             </div>
         </div>
 
-        <div style="display: flex; gap: 15px; width: 100%;">
-            <div class="form-group" style="flex: 1;">
-                <label>Серия и номер диплома</label><br>
-                <input type="text" name="students-${sIdx}-diploma_seriesnumber" class="form-control" placeholder="Серия и номер диплома" required>
+        <div class="form-row">
+            <div class="form-group col-1">
+                <label>Серия и номер диплома</label>
+                <input type="text" name="students-${sIdx}-diploma_seriesnumber" class="form-control" placeholder="Серия и номер" required>
             </div>
-            <div class="form-group" style="flex: 1;">
-                <label>Дата выдачи диплома</label><br>
+            <div class="form-group col-1">
+                <label>Дата выдачи диплома</label>
                 <input type="text" name="students-${sIdx}-diploma_date" class="form-control" placeholder="дд.мм.гггг" required>
             </div>
-            <div class="form-group" style="flex: 1;">
-                <label>Фамилия в дипломе</label><br>
+            <div class="form-group col-1">
+                <label>Фамилия в дипломе</label>
                 <input type="text" name="students-${sIdx}-diploma_lastname" class="form-control" placeholder="Фамилия в дипломе" required>
             </div>
         </div>
 
-        <div style="display: flex; gap: 15px; width: 100%;">
-            <div class="form-group" style="flex: 1;">
-                <label>СНИЛС</label><br>
+        <div class="form-row">
+            <div class="form-group col-1">
+                <label>СНИЛС</label>
                 <input type="text" name="students-${sIdx}-snils" class="form-control" placeholder="123-456-789 01" required>
             </div>
-            <div class="form-group" style="flex: 1;">
-                <label>Телефон слушателя</label><br>
+            <div class="form-group col-1">
+                <label>Телефон слушателя</label>
                 <input type="text" name="students-${sIdx}-student_telephone" class="form-control" placeholder="+7 (___) ___-__-__" required>
             </div>
-            <div class="form-group" style="flex: 1;">
-                <label>Email слушателя</label><br>
+            <div class="form-group col-1">
+                <label>Email слушателя</label>
                 <input type="email" name="students-${sIdx}-student_email" class="form-control" placeholder="student@mail.ru" required>
             </div>
         </div>
 
-        <div class="form-group categories" style="margin-top: 15px;">
-            <label style="font-weight: 700; color: var(--primary-color);">Программы обучения для данного слушателя</label>
+        <div class="categories-wrapper">
+            <label style="font-weight: 700; color: var(--primary); display: block; margin-bottom: 10px;">
+                Программы обучения для данного слушателя
+            </label>
             <div class="categories-container">
                 <div class="category-row">
                     <div class="category-content">
-                        <div style="width: 100%; margin-bottom: 10px;">
+                        <div style="margin-bottom: 10px;">
                             <select name="students-${sIdx}-student_categories-0-category" class="form-control category-select" required>
                                 ${optionsHtml}
                             </select>
                         </div>
-                        <div style="display: flex; gap: 15px; width: 100%;">
-                            <div class="category-date" style="flex: 1;">
-                                <div class="category-date-text">Дата начала</div>
-                                <input type="date" name="students-${sIdx}-student_categories-0-start_date" class="form-control date-study" required>
+                        <div class="form-row">
+                            <div class="form-group col-1">
+                                <label style="font-size: 0.8rem; color: var(--text-muted);">Дата начала</label>
+                                <input type="date" name="students-${sIdx}-student_categories-0-start_date" class="form-control" required>
                             </div>
-                            <div class="category-date" style="flex: 1;">
-                                <div class="category-date-text">Дата окончания</div>
-                                <input type="date" name="students-${sIdx}-student_categories-0-end_date" class="form-control date-study" required>
+                            <div class="form-group col-1">
+                                <label style="font-size: 0.8rem; color: var(--text-muted);">Дата окончания</label>
+                                <input type="date" name="students-${sIdx}-student_categories-0-end_date" class="form-control" required>
                             </div>
                         </div>
                     </div>
-                    <div class="remove-category-button" onclick="removeCategoryRow(this)" title="Удалить программу">-</div>
+                    <button type="button" class="btn-remove-category" onclick="removeCategoryRow(this)" title="Удалить программу">✕</button>
                 </div>
             </div>
-            <div class="add-category-button" onclick="addCategoryRow(this)">
+            <button type="button" class="btn-add-category" onclick="addCategoryRow(this)">
                 + Добавить программу обучения
-            </div>
+            </button>
         </div>
 
-        <div style="display: flex; gap: 15px; width: 100%; margin-top: 15px;">
-            <div class="form-group" style="flex: 1;">
-                <label>Способ получения документа</label><br>
+        <div class="form-row">
+            <div class="form-group col-1">
+                <label>Способ получения документа</label>
                 <select name="students-${sIdx}-diploma_delivery" class="form-control delivery-select" onchange="toggleDeliveryAddress(this)">
                     <option value="personal">Лично в учебном центре</option>
                     <option value="mail">Почтой России</option>
                 </select>
             </div>
-            <div class="form-group delivery-address-group" style="flex: 2; display: none;">
-                <label>Адрес почтовой доставки</label><br>
+            <div class="form-group col-2 delivery-address-group" style="display: none;">
+                <label>Адрес почтовой доставки</label>
                 <input type="text" name="students-${sIdx}-delivery_address" class="form-control" placeholder="Почтовый адрес для отправки удостоверения">
             </div>
         </div>
@@ -651,20 +650,15 @@ function addNewStudent() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Инициализация существующих TomSelect
     document.querySelectorAll(".category-select").forEach(initTomSelect);
-
-    // Первоначальное построение боковой навигации
     updateNavigation();
 
-    // Отслеживание ввода ФИО для обновления навигации в реальном времени
     document.addEventListener("input", (e) => {
         if (e.target.classList.contains("student-fio-input")) {
             updateNavigation();
         }
     });
 
-    // Проверка способов доставки при загрузке
     document.querySelectorAll(".delivery-select").forEach(toggleDeliveryAddress);
 });
 </script>
