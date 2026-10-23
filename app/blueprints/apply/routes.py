@@ -18,16 +18,76 @@ from app.services.application_service import ApplicationService
 from app.services.docx_service import DocxService
 
 def get_program_choices(direction: str, study_form: str):
-    """Возвращает список доступных программ для выбора в форме."""
+    """Возвращает список доступных программ для выбора в форме с учетом направления и формы обучения."""
     query = Program.query.filter_by(is_active=True)
     if direction in [d.value for d in TrainingDirection]:
         query = query.filter(Program.direction == direction)
-    
+    if study_form in [s.value for s in StudyForm]:
+        query = query.filter(Program.study_form.in_([study_form, "both"]))
+
     programs = query.order_by(Program.id).all()
     choices = [("", "Выберите категорию обучения")]
     for p in programs:
         choices.append((p.code, f"{p.title} ({p.hours} ч.)" if p.hours else p.title))
     return choices
+
+
+def extract_form_data(form: ApplicationForm):
+    """Извлекает нормализованные словари данных организации и слушателей из формы."""
+    org_data = {
+        "organization_full_name": form.organization_full_name.data,
+        "organization_short_name": form.organization_short_name.data,
+        "inn": form.inn.data,
+        "kpp": form.kpp.data,
+        "ogrn": form.ogrn.data,
+        "bank_name": form.bank_name.data,
+        "bik": form.bik.data,
+        "rasch_schot": form.rasch_schot.data,
+        "boss_lastname": form.boss_lastname.data,
+        "boss_firstname": form.boss_firstname.data,
+        "boss_patronymic": form.boss_patronymic.data,
+        "doljnost_boss": form.doljnost_boss.data,
+        "polnamochia_boss": form.polnamochia_boss.data,
+        "yur_address": form.yur_address.data,
+        "fakt_address": form.fakt_address.data,
+        "telephone": form.telephone.data,
+        "email": form.email.data,
+        "fio_executor": form.fio_executor.data,
+        "doljnost_executor": form.doljnost_executor.data,
+        "telephone_executor": form.telephone_executor.data,
+    }
+
+    students_data = []
+    for s_form in form.students:
+        s_categories = []
+        for c_form in s_form.student_categories:
+            s_categories.append({
+                "category": c_form.category.data,
+                "start_date": c_form.start_date.data,
+                "end_date": c_form.end_date.data,
+            })
+
+        students_data.append({
+            "student_lastname": s_form.student_lastname.data,
+            "student_firstname": s_form.student_firstname.data,
+            "student_patronymic": s_form.student_patronymic.data,
+            "student_birthdate": s_form.student_birthdate.data,
+            "citizenship": s_form.citizenship.data,
+            "student_position": s_form.student_position.data,
+            "education": s_form.education.data,
+            "institute_name": s_form.institute_name.data,
+            "diploma_seriesnumber": s_form.diploma_seriesnumber.data,
+            "diploma_date": s_form.diploma_date.data,
+            "diploma_lastname": s_form.diploma_lastname.data,
+            "snils": s_form.snils.data,
+            "student_telephone": s_form.student_telephone.data,
+            "student_email": s_form.student_email.data,
+            "diploma_delivery": s_form.diploma_delivery.data,
+            "delivery_address": s_form.delivery_address.data,
+            "student_categories": s_categories,
+        })
+
+    return org_data, students_data
 
 
 @apply_bp.route("/<study_form>/<direction>", methods=["GET", "POST"])
@@ -41,69 +101,15 @@ def form_view(study_form: str, direction: str):
         return redirect(url_for("main.index"))
 
     form = ApplicationForm()
-
-    # Заполняем варианты программ для всех категорий
     choices = get_program_choices(direction, study_form)
+
     for student_form in form.students:
         for cat_form in student_form.student_categories:
             cat_form.category.choices = choices
 
     if form.validate_on_submit():
         try:
-            # Извлекаем очищенные данные организации
-            org_data = {
-                "organization_full_name": form.organization_full_name.data,
-                "organization_short_name": form.organization_short_name.data,
-                "inn": form.inn.data,
-                "kpp": form.kpp.data,
-                "ogrn": form.ogrn.data,
-                "bank_name": form.bank_name.data,
-                "bik": form.bik.data,
-                "rasch_schot": form.rasch_schot.data,
-                "boss_lastname": form.boss_lastname.data,
-                "boss_firstname": form.boss_firstname.data,
-                "boss_patronymic": form.boss_patronymic.data,
-                "doljnost_boss": form.doljnost_boss.data,
-                "polnamochia_boss": form.polnamochia_boss.data,
-                "yur_address": form.yur_address.data,
-                "fakt_address": form.fakt_address.data,
-                "telephone": form.telephone.data,
-                "email": form.email.data,
-                "fio_executor": form.fio_executor.data,
-                "doljnost_executor": form.doljnost_executor.data,
-                "telephone_executor": form.telephone_executor.data,
-            }
-
-            # Извлекаем очищенные данные слушателей
-            students_data = []
-            for s_form in form.students:
-                s_categories = []
-                for c_form in s_form.student_categories:
-                    s_categories.append({
-                        "category": c_form.category.data,
-                        "start_date": c_form.start_date.data,
-                        "end_date": c_form.end_date.data,
-                    })
-
-                students_data.append({
-                    "student_lastname": s_form.student_lastname.data,
-                    "student_firstname": s_form.student_firstname.data,
-                    "student_patronymic": s_form.student_patronymic.data,
-                    "student_birthdate": s_form.student_birthdate.data,
-                    "citizenship": s_form.citizenship.data,
-                    "student_position": s_form.student_position.data,
-                    "education": s_form.education.data,
-                    "institute_name": s_form.institute_name.data,
-                    "diploma_seriesnumber": s_form.diploma_seriesnumber.data,
-                    "diploma_date": s_form.diploma_date.data,
-                    "diploma_lastname": s_form.diploma_lastname.data,
-                    "snils": s_form.snils.data,
-                    "student_telephone": s_form.student_telephone.data,
-                    "student_email": s_form.student_email.data,
-                    "diploma_delivery": s_form.diploma_delivery.data,
-                    "delivery_address": s_form.delivery_address.data,
-                    "student_categories": s_categories,
-                })
+            org_data, students_data = extract_form_data(form)
 
             # Сохраняем черновик заявки
             application = ApplicationService.create_application_draft(
@@ -114,7 +120,6 @@ def form_view(study_form: str, direction: str):
             )
 
             flash(f"Заявка № {application.app_number} успешно сформирована!", "success")
-            # Перенаправляем на страницу статуса и загрузки скана с флагом авто-скачивания docx
             return redirect(url_for("apply.status_view", token=application.secret_token, download="1"))
 
         except Exception as e:
@@ -123,10 +128,57 @@ def form_view(study_form: str, direction: str):
     return render_template(
         "apply/form.html",
         form=form,
+        is_edit=False,
         study_form=study_form,
         direction=direction,
         study_form_label=StudyForm.label(study_form),
         direction_label=TrainingDirection.label(direction),
+        program_choices=choices
+    )
+
+
+@apply_bp.route("/edit/<token>", methods=["GET", "POST"])
+def edit_view(token: str):
+    """Маршрут редактирования заявки: позволяет вернуться с шага 2 на шаг 1 и скорректировать данные."""
+    application = Application.query.filter_by(secret_token=token).first_or_404()
+    choices = get_program_choices(application.direction, application.study_form)
+
+    if request.method == "POST":
+        form = ApplicationForm()
+        for student_form in form.students:
+            for cat_form in student_form.student_categories:
+                cat_form.category.choices = choices
+
+        if form.validate_on_submit():
+            try:
+                org_data, students_data = extract_form_data(form)
+                ApplicationService.update_application_draft(
+                    token=token,
+                    org_data=org_data,
+                    students_data=students_data
+                )
+                flash(f"Заявка № {application.app_number} успешно обновлена! Сформирован обновленный бланк.", "success")
+                return redirect(url_for("apply.status_view", token=token, download="1"))
+            except Exception as e:
+                current_app.logger.error(f"Error updating application {token}: {e}", exc_info=True)
+                flash(f"Ошибка при обновлении заявки: {str(e)}", "danger")
+    else:
+        # GET-запрос: предзаполняем форму сохраненными данными из БД
+        init_data = ApplicationService.get_application_form_data(application)
+        form = ApplicationForm(data=init_data)
+        for student_form in form.students:
+            for cat_form in student_form.student_categories:
+                cat_form.category.choices = choices
+
+    return render_template(
+        "apply/form.html",
+        form=form,
+        is_edit=True,
+        application=application,
+        study_form=application.study_form,
+        direction=application.direction,
+        study_form_label=StudyForm.label(application.study_form),
+        direction_label=TrainingDirection.label(application.direction),
         program_choices=choices
     )
 

@@ -18,6 +18,11 @@ from app.models.application import (
 
 class ApplicationService:
     @staticmethod
+    def _s(val: Any) -> str:
+        """Безопасная очистка строкового значения (защита от None)."""
+        return str(val).strip() if val is not None else ""
+
+    @staticmethod
     def clean_digits(value: Optional[str]) -> str:
         """Очищает строку, оставляя только цифры (для СНИЛС, ИНН, ОГРН, телефонов)."""
         if not value:
@@ -63,46 +68,47 @@ class ApplicationService:
             (Organization.inn == inn) | (Organization.ogrn == ogrn)
         ).first()
 
+        _s = cls._s
         if not org:
             org = Organization(
-                full_name=org_data.get("organization_full_name", "").strip(),
-                short_name=org_data.get("organization_short_name", "").strip(),
+                full_name=_s(org_data.get("organization_full_name")),
+                short_name=_s(org_data.get("organization_short_name")),
                 inn=inn,
                 kpp=cls.clean_digits(org_data.get("kpp")),
                 ogrn=ogrn,
-                bank_name=org_data.get("bank_name", "").strip(),
+                bank_name=_s(org_data.get("bank_name")),
                 bik=cls.clean_digits(org_data.get("bik")),
-                account_number=cls.clean_digits(org_data.get("rasch_schot", "")),
-                boss_lastname=org_data.get("boss_lastname", "").strip(),
-                boss_firstname=org_data.get("boss_firstname", "").strip(),
-                boss_patronymic=org_data.get("boss_patronymic", "").strip() or None,
-                boss_position=org_data.get("doljnost_boss", "").strip(),
-                boss_authority=org_data.get("polnamochia_boss", "").strip(),
-                legal_address=org_data.get("yur_address", "").strip(),
-                actual_address=org_data.get("fakt_address", "").strip(),
-                phone=org_data.get("telephone", "").strip(),
-                email=org_data.get("email", "").strip(),
-                executor_fio=org_data.get("fio_executor", "").strip(),
-                executor_position=org_data.get("doljnost_executor", "").strip(),
-                executor_phone=org_data.get("telephone_executor", "").strip(),
-                executor_email=org_data.get("email", "").strip()
+                account_number=cls.clean_digits(org_data.get("rasch_schot")),
+                boss_lastname=_s(org_data.get("boss_lastname")),
+                boss_firstname=_s(org_data.get("boss_firstname")),
+                boss_patronymic=_s(org_data.get("boss_patronymic")) or None,
+                boss_position=_s(org_data.get("doljnost_boss")),
+                boss_authority=_s(org_data.get("polnamochia_boss")),
+                legal_address=_s(org_data.get("yur_address")),
+                actual_address=_s(org_data.get("fakt_address")),
+                phone=_s(org_data.get("telephone")),
+                email=_s(org_data.get("email")),
+                executor_fio=_s(org_data.get("fio_executor")),
+                executor_position=_s(org_data.get("doljnost_executor")),
+                executor_phone=_s(org_data.get("telephone_executor")),
+                executor_email=_s(org_data.get("email"))
             )
             db.session.add(org)
         else:
             # Обновляем реквизиты и контактные данные
-            org.full_name = org_data.get("organization_full_name", "").strip() or org.full_name
-            org.short_name = org_data.get("organization_short_name", "").strip() or org.short_name
-            org.bank_name = org_data.get("bank_name", "").strip() or org.bank_name
+            org.full_name = _s(org_data.get("organization_full_name")) or org.full_name
+            org.short_name = _s(org_data.get("organization_short_name")) or org.short_name
+            org.bank_name = _s(org_data.get("bank_name")) or org.bank_name
             org.bik = cls.clean_digits(org_data.get("bik")) or org.bik
-            org.account_number = cls.clean_digits(org_data.get("rasch_schot", "")) or org.account_number
-            org.boss_position = org_data.get("doljnost_boss", "").strip() or org.boss_position
-            org.boss_authority = org_data.get("polnamochia_boss", "").strip() or org.boss_authority
-            org.actual_address = org_data.get("fakt_address", "").strip() or org.actual_address
-            org.phone = org_data.get("telephone", "").strip() or org.phone
-            org.email = org_data.get("email", "").strip() or org.email
-            org.executor_fio = org_data.get("fio_executor", "").strip() or org.executor_fio
-            org.executor_position = org_data.get("doljnost_executor", "").strip() or org.executor_position
-            org.executor_phone = org_data.get("telephone_executor", "").strip() or org.executor_phone
+            org.account_number = cls.clean_digits(org_data.get("rasch_schot")) or org.account_number
+            org.boss_position = _s(org_data.get("doljnost_boss")) or org.boss_position
+            org.boss_authority = _s(org_data.get("polnamochia_boss")) or org.boss_authority
+            org.actual_address = _s(org_data.get("fakt_address")) or org.actual_address
+            org.phone = _s(org_data.get("telephone")) or org.phone
+            org.email = _s(org_data.get("email")) or org.email
+            org.executor_fio = _s(org_data.get("fio_executor")) or org.executor_fio
+            org.executor_position = _s(org_data.get("doljnost_executor")) or org.executor_position
+            org.executor_phone = _s(org_data.get("telephone_executor")) or org.executor_phone
 
         db.session.flush()
         return org
@@ -110,6 +116,7 @@ class ApplicationService:
     @classmethod
     def save_or_update_person(cls, student_data: Dict[str, Any]) -> Person:
         """Находит гражданина по СНИЛС или создает нового."""
+        _s = cls._s
         clean_snils = cls.clean_digits(student_data.get("snils"))
 
         person = Person.query.filter_by(snils=clean_snils).first()
@@ -128,35 +135,81 @@ class ApplicationService:
         if not person:
             person = Person(
                 snils=clean_snils,
-                lastname=student_data.get("student_lastname", "").strip(),
-                firstname=student_data.get("student_firstname", "").strip(),
-                patronymic=student_data.get("student_patronymic", "").strip() or None,
+                lastname=_s(student_data.get("student_lastname")),
+                firstname=_s(student_data.get("student_firstname")),
+                patronymic=_s(student_data.get("student_patronymic")) or None,
                 birthdate=birthdate,
-                citizenship=student_data.get("citizenship", "РФ").strip(),
-                phone=student_data.get("student_telephone", "").strip(),
-                email=student_data.get("student_email", "").strip(),
-                education_level=student_data.get("education", "").strip(),
-                institute_name=student_data.get("institute_name", "").strip(),
-                diploma_series_number=student_data.get("diploma_seriesnumber", "").strip(),
-                diploma_date=str(student_data.get("diploma_date", "")).strip(),
-                diploma_lastname=student_data.get("diploma_lastname", "").strip()
+                citizenship=_s(student_data.get("citizenship")) or "РФ",
+                phone=_s(student_data.get("student_telephone")),
+                email=_s(student_data.get("student_email")),
+                education_level=_s(student_data.get("education")),
+                institute_name=_s(student_data.get("institute_name")),
+                diploma_series_number=_s(student_data.get("diploma_seriesnumber")),
+                diploma_date=_s(student_data.get("diploma_date")),
+                diploma_lastname=_s(student_data.get("diploma_lastname"))
             )
             db.session.add(person)
         else:
             # Обновляем контактные данные и образование
-            person.lastname = student_data.get("student_lastname", "").strip() or person.lastname
-            person.firstname = student_data.get("student_firstname", "").strip() or person.firstname
-            person.patronymic = student_data.get("student_patronymic", "").strip() or person.patronymic
-            person.phone = student_data.get("student_telephone", "").strip() or person.phone
-            person.email = student_data.get("student_email", "").strip() or person.email
-            person.education_level = student_data.get("education", "").strip() or person.education_level
-            person.institute_name = student_data.get("institute_name", "").strip() or person.institute_name
-            person.diploma_series_number = student_data.get("diploma_seriesnumber", "").strip() or person.diploma_series_number
-            person.diploma_date = str(student_data.get("diploma_date", "")).strip() or person.diploma_date
-            person.diploma_lastname = student_data.get("diploma_lastname", "").strip() or person.diploma_lastname
+            person.lastname = _s(student_data.get("student_lastname")) or person.lastname
+            person.firstname = _s(student_data.get("student_firstname")) or person.firstname
+            person.patronymic = _s(student_data.get("student_patronymic")) or person.patronymic
+            person.phone = _s(student_data.get("student_telephone")) or person.phone
+            person.email = _s(student_data.get("student_email")) or person.email
+            person.education_level = _s(student_data.get("education")) or person.education_level
+            person.institute_name = _s(student_data.get("institute_name")) or person.institute_name
+            person.diploma_series_number = _s(student_data.get("diploma_seriesnumber")) or person.diploma_series_number
+            person.diploma_date = _s(student_data.get("diploma_date")) or person.diploma_date
+            person.diploma_lastname = _s(student_data.get("diploma_lastname")) or person.diploma_lastname
 
         db.session.flush()
         return person
+
+    @classmethod
+    def _save_application_listeners(cls, application: Application, students_data: List[Dict[str, Any]]):
+        """Сохраняет слушателей и их курсы для заявки."""
+        _s = cls._s
+        for s_data in students_data:
+            person = cls.save_or_update_person(s_data)
+
+            listener = ApplicationListener(
+                application=application,
+                person=person,
+                position=_s(s_data.get("student_position")),
+                diploma_delivery=s_data.get("diploma_delivery") or "personal",
+                delivery_address=_s(s_data.get("delivery_address")) or None
+            )
+            db.session.add(listener)
+            db.session.flush()
+
+            categories = s_data.get("student_categories", [])
+            for cat_item in categories:
+                cat_code = cat_item.get("category")
+                if not cat_code:
+                    continue
+
+                prog = Program.query.filter_by(code=cat_code).first()
+                if not prog:
+                    prog = Program.query.first()
+
+                start_d = cat_item.get("start_date")
+                end_d = cat_item.get("end_date")
+
+                if isinstance(start_d, str):
+                    start_d = datetime.strptime(start_d, "%Y-%m-%d").date()
+                if isinstance(end_d, str):
+                    end_d = datetime.strptime(end_d, "%Y-%m-%d").date()
+
+                if not start_d or not end_d:
+                    continue
+
+                course = ListenerCourse(
+                    listener=listener,
+                    program=prog,
+                    start_date=start_d,
+                    end_date=end_d
+                )
+                db.session.add(course)
 
     @classmethod
     def create_application_draft(
@@ -188,56 +241,108 @@ class ApplicationService:
             db.session.flush()
 
             # 3. Слушатели и их курсы
-            for s_data in students_data:
-                person = cls.save_or_update_person(s_data)
-
-                listener = ApplicationListener(
-                    application=application,
-                    person=person,
-                    position=s_data.get("student_position", "").strip(),
-                    diploma_delivery=s_data.get("diploma_delivery", "personal"),
-                    delivery_address=s_data.get("delivery_address", "").strip() or None
-                )
-                db.session.add(listener)
-                db.session.flush()
-
-                # Категории / программы этого слушателя
-                categories = s_data.get("student_categories", [])
-                for cat_item in categories:
-                    cat_code = cat_item.get("category")
-                    if not cat_code:
-                        continue
-
-                    # Находим программу по коду
-                    prog = Program.query.filter_by(code=cat_code).first()
-                    if not prog:
-                        # Если программа еще не в базе, берем первую подходящую или создаем
-                        prog = Program.query.first()
-
-                    start_d = cat_item.get("start_date")
-                    end_d = cat_item.get("end_date")
-
-                    if isinstance(start_d, str):
-                        start_d = datetime.strptime(start_d, "%Y-%m-%d").date()
-                    if isinstance(end_d, str):
-                        end_d = datetime.strptime(end_d, "%Y-%m-%d").date()
-
-                    if not start_d or not end_d:
-                        continue
-
-                    course = ListenerCourse(
-                        listener=listener,
-                        program=prog,
-                        start_date=start_d,
-                        end_date=end_d
-                    )
-                    db.session.add(course)
+            cls._save_application_listeners(application, students_data)
 
             db.session.commit()
             return application
         except Exception:
             db.session.rollback()
             raise
+
+    @classmethod
+    def update_application_draft(
+        cls,
+        token: str,
+        org_data: Dict[str, Any],
+        students_data: List[Dict[str, Any]]
+    ) -> Application:
+        """
+        Обновляет существующий черновик заявки (организацию, слушателей, курсы),
+        сохраняя тот же номер заявки и секретный токен.
+        """
+        application = Application.query.filter_by(secret_token=token).first()
+        if not application:
+            raise ValueError("Заявка с указанным токеном не найдена.")
+
+        try:
+            # 1. Обновляем организацию
+            cls.save_or_update_organization(org_data)
+
+            # 2. Удаляем старых слушателей (курсы удалятся каскадно)
+            for old_listener in list(application.listeners):
+                db.session.delete(old_listener)
+            db.session.flush()
+
+            # 3. Добавляем обновленный список слушателей и их курсов
+            cls._save_application_listeners(application, students_data)
+
+            application.updated_at = datetime.now(timezone.utc)
+            db.session.commit()
+            return application
+        except Exception:
+            db.session.rollback()
+            raise
+
+    @classmethod
+    def get_application_form_data(cls, application: Application) -> Dict[str, Any]:
+        """Формирует словарь начальных данных для предзаполнения формы редактирования."""
+        org = application.organization
+        students = []
+        for l in application.listeners:
+            p = l.person
+            categories = []
+            for c in l.courses:
+                categories.append({
+                    "category": c.program.code if c.program else "",
+                    "start_date": c.start_date,
+                    "end_date": c.end_date,
+                })
+            if not categories:
+                categories.append({"category": "", "start_date": None, "end_date": None})
+
+            students.append({
+                "student_lastname": p.lastname,
+                "student_firstname": p.firstname,
+                "student_patronymic": p.patronymic or "",
+                "student_birthdate": p.birthdate,
+                "citizenship": p.citizenship,
+                "student_position": l.position,
+                "education": p.education_level,
+                "institute_name": p.institute_name,
+                "diploma_seriesnumber": p.diploma_series_number,
+                "diploma_date": p.diploma_date,
+                "diploma_lastname": p.diploma_lastname,
+                "snils": p.formatted_snils,
+                "student_telephone": p.phone,
+                "student_email": p.email,
+                "diploma_delivery": l.diploma_delivery,
+                "delivery_address": l.delivery_address or "",
+                "student_categories": categories,
+            })
+
+        return {
+            "organization_full_name": org.full_name,
+            "organization_short_name": org.short_name,
+            "inn": org.inn,
+            "kpp": org.kpp or "",
+            "ogrn": org.ogrn,
+            "bank_name": org.bank_name,
+            "bik": org.bik,
+            "rasch_schot": org.account_number,
+            "boss_lastname": org.boss_lastname,
+            "boss_firstname": org.boss_firstname,
+            "boss_patronymic": org.boss_patronymic or "",
+            "doljnost_boss": org.boss_position,
+            "polnamochia_boss": org.boss_authority,
+            "yur_address": org.legal_address,
+            "fakt_address": org.actual_address,
+            "telephone": org.phone,
+            "email": org.email,
+            "fio_executor": org.executor_fio,
+            "doljnost_executor": org.executor_position,
+            "telephone_executor": org.executor_phone,
+            "students": students,
+        }
 
     @classmethod
     def attach_signed_scan(cls, token: str, file_storage, upload_folder: str) -> Application:

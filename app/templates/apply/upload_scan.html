@@ -4,10 +4,10 @@
 
 {% block content %}
 <div class="steps-wizard">
-    <div class="wizard-step completed">
+    <a href="{{ url_for('apply.edit_view', token=application.secret_token) }}" class="wizard-step completed" style="text-decoration: none;" title="Нажмите, чтобы вернуться к редактированию данных">
         <span class="circle">✓</span>
-        <span>Данные заполнены</span>
-    </div>
+        <span>1. Данные заявки (изменить)</span>
+    </a>
     <div class="wizard-step active">
         <span class="circle">2</span>
         <span>Скачивание бланка</span>
@@ -19,6 +19,20 @@
 </div>
 
 <div class="container-mid" style="width: 75%; margin-top: 10px;">
+
+    <!-- БАННЕР РЕДАКТИРОВАНИЯ (ВОЗВРАТ НА ШАГ 1) -->
+    <div style="background: #ffffff; border: 1.5px solid var(--border-light); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 1.4rem;">✏️</span>
+            <div>
+                <strong style="color: var(--text-main); font-size: 0.95rem;">Нашли опечатку или нужно изменить данные?</strong>
+                <p style="margin: 0; color: var(--text-muted); font-size: 0.85rem;">Вы можете вернуться на 1-й шаг, исправить реквизиты или список слушателей и сформировать обновленный бланк.</p>
+            </div>
+        </div>
+        <a href="{{ url_for('apply.edit_view', token=application.secret_token) }}" class="btn-outline-action">
+            ← Редактировать заявку
+        </a>
+    </div>
 
     <div class="action-card">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">

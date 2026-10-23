@@ -1,11 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Заявка: {{ direction_label }} ({{ study_form_label }}){% endblock %}
+{% block title %}{% if is_edit %}Редактирование заявки {{ application.app_number }}{% else %}Заявка: {{ direction_label }} ({{ study_form_label }}){% endif %}{% endblock %}
 
 {% block nav_back %}
+{% if is_edit %}
+<a href="{{ url_for('apply.status_view', token=application.secret_token) }}" style="color: #fff; text-decoration: none; font-weight: 600; font-size: 0.9rem; padding: 8px 16px; border: 1.5px solid rgba(255,255,255,0.4); border-radius: var(--radius-sm);">
+    ← К бланку заявки
+</a>
+{% else %}
 <a href="{{ url_for('main.index') }}" style="color: #fff; text-decoration: none; font-weight: 600; font-size: 0.9rem; padding: 8px 16px; border: 1.5px solid rgba(255,255,255,0.4); border-radius: var(--radius-sm);">
     ← В начало
 </a>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -14,11 +20,11 @@
 <div class="steps-wizard">
     <div class="wizard-step active">
         <span class="circle">1</span>
-        <span>Заполнение данных</span>
+        <span>{% if is_edit %}Редактирование данных{% else %}Заполнение данных{% endif %}</span>
     </div>
     <div class="wizard-step">
         <span class="circle">2</span>
-        <span>Скачивание бланка (.docx)</span>
+        <span>{% if is_edit %}Обновление бланка (.docx){% else %}Скачивание бланка (.docx){% endif %}</span>
     </div>
     <div class="wizard-step">
         <span class="circle">3</span>
@@ -29,6 +35,9 @@
 <div class="hh2">
     <h2>{{ direction_label }}</h2>
     <span class="badge-status badge-submitted" style="margin-top: 8px;">{{ study_form_label }}</span>
+    {% if is_edit %}
+        <span class="badge-status badge-draft" style="margin-top: 8px; margin-left: 6px;">Редактирование заявки {{ application.app_number }}</span>
+    {% endif %}
 </div>
 
 <form method="post" id="application-form">
@@ -352,16 +361,27 @@
 
     <!-- ШАГ 3: ФОРМИРОВАНИЕ ОФИЦИАЛЬНОГО ДОКУМЕНТА (Во всю ширину) -->
     <div class="step-divider">
-        <h2>Шаг 3. Формирование официального документа</h2>
+        <h2>Шаг 3. {% if is_edit %}Обновление официального документа{% else %}Формирование официального документа{% endif %}</h2>
     </div>
 
     <div class="action-card" style="text-align: center; padding: 36px 24px;">
-        <button type="submit" class="btn-primary-action" style="font-size: 1.15rem; padding: 16px 36px;">
-            📄 Сформировать печатную форму (.docx) и перейти к загрузке скана →
-        </button>
-        <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 14px;">
-            Система зафиксирует черновик заявки и сгенерирует готовый файл Word для распечатки, подписи руководителем и заверения печатью.
-        </p>
+        {% if is_edit %}
+            <button type="submit" class="btn-primary-action" style="font-size: 1.15rem; padding: 16px 36px;">
+                💾 Сохранить изменения и обновить печатную форму (.docx) →
+            </button>
+            <p style="margin-top: 14px;">
+                <a href="{{ url_for('apply.status_view', token=application.secret_token) }}" style="color: var(--text-muted); font-size: 0.95rem; text-decoration: underline;">
+                    Отмена (вернуться к заявке без сохранения)
+                </a>
+            </p>
+        {% else %}
+            <button type="submit" class="btn-primary-action" style="font-size: 1.15rem; padding: 16px 36px;">
+                📄 Сформировать печатную форму (.docx) и перейти к загрузке скана →
+            </button>
+            <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 14px;">
+                Система зафиксирует черновик заявки и сгенерирует готовый файл Word для распечатки, подписи руководителем и заверения печатью.
+            </p>
+        {% endif %}
     </div>
 
 </form>
