@@ -782,6 +782,13 @@ select.tomselected {
     border: 1px solid var(--danger-border);
 }
 
+/* Средний центрированный контейнер (для страниц скачивания, статуса и успешной подачи заявки) */
+.container-mid {
+    width: 100%;
+    max-width: 900px;
+    margin: 15px auto 40px auto;
+}
+
 /* Карточка статуса / действия */
 .action-card {
     background: var(--bg-card);
