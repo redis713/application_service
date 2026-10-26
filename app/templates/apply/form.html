@@ -8,9 +8,15 @@
     ← К бланку заявки
 </a>
 {% else %}
-<a href="{{ url_for('main.index') }}" style="color: #fff; text-decoration: none; font-weight: 600; font-size: 0.9rem; padding: 8px 16px; border: 1.5px solid rgba(255,255,255,0.4); border-radius: var(--radius-sm);">
-    ← В начало
-</a>
+    {% if fixed_program and direction not in ['antiterror', 'specialist'] %}
+    <a href="{{ url_for('apply.programs_view', study_form=study_form, direction=direction) }}" style="color: #fff; text-decoration: none; font-weight: 600; font-size: 0.9rem; padding: 8px 16px; border: 1.5px solid rgba(255,255,255,0.4); border-radius: var(--radius-sm);">
+        ← Назад к выбору программы
+    </a>
+    {% else %}
+    <a href="{{ url_for('main.' + study_form) }}" style="color: #fff; text-decoration: none; font-weight: 600; font-size: 0.9rem; padding: 8px 16px; border: 1.5px solid rgba(255,255,255,0.4); border-radius: var(--radius-sm);">
+        ← Назад к направлениям
+    </a>
+    {% endif %}
 {% endif %}
 {% endblock %}
 
@@ -34,14 +40,22 @@
 
 <div class="hh2">
     <h2>{{ direction_label }}</h2>
-    <span class="badge-status badge-submitted" style="margin-top: 8px;">{{ study_form_label }}</span>
-    {% if is_edit %}
-        <span class="badge-status badge-draft" style="margin-top: 8px; margin-left: 6px;">Редактирование заявки {{ application.app_number }}</span>
-    {% endif %}
+    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 8px;">
+        <span class="badge-status badge-submitted">{{ study_form_label }}</span>
+        {% if fixed_program %}
+            <span class="badge-status badge-draft" title="{{ fixed_program.title }}">Программа: {{ fixed_program.title[:65] }}{% if fixed_program.title|length > 65 %}...{% endif %} ({{ fixed_program.hours }} ч.)</span>
+        {% endif %}
+        {% if is_edit %}
+            <span class="badge-status badge-draft">Редактирование заявки {{ application.app_number }}</span>
+        {% endif %}
+    </div>
 </div>
 
 <form method="post" id="application-form">
     {{ form.hidden_tag() }}
+    {% if fixed_program %}
+        <input type="hidden" name="fixed_category_code" value="{{ fixed_program.code }}">
+    {% endif %}
 
     <!-- ШАГ 1: ДАННЫЕ ОРГАНИЗАЦИИ (Во всю ширину) -->
     <div class="step-divider">
@@ -289,39 +303,66 @@
 
                     <!-- ПРОГРАММЫ СЛУШАТЕЛЯ -->
                     <div class="categories-wrapper">
-                        <label style="font-weight: 700; color: var(--primary); display: block; margin-bottom: 10px;">
-                            Программы обучения для данного слушателя
-                        </label>
-
-                        <div class="categories-container">
-                            {% for cat_form in student_form.student_categories %}
-                            <div class="category-row">
-                                <div class="category-content">
-                                    <div class="form-group {% if cat_form.category.errors %}has-error{% endif %}" style="margin-bottom: 10px;">
-                                        {{ cat_form.category(class="category-select") }}
-                                        {% for err in cat_form.category.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                                    </div>
+                        {% if fixed_program %}
+                            <div class="fixed-program-card">
+                                <span class="badge-status badge-submitted" style="font-size: 0.8rem; margin-bottom: 6px;">
+                                    Программа обучения (единая для всех слушателей в заявке)
+                                </span>
+                                <div style="font-weight: 700; color: var(--primary); font-size: 1rem; margin-bottom: 12px; line-height: 1.4;">
+                                    {{ fixed_program.title }} ({{ fixed_program.hours }} ак. ч.)
+                                </div>
+                                {% set student_idx = loop.index0 %}
+                                {% for cat_form in student_form.student_categories %}
+                                    <input type="hidden" name="students-{{ student_idx }}-student_categories-0-category" value="{{ fixed_program.code }}">
                                     <div class="form-row">
                                         <div class="form-group col-1 {% if cat_form.start_date.errors %}has-error{% endif %}">
-                                            <label style="font-size: 0.8rem; color: var(--text-muted);">Дата начала</label>
+                                            <label style="font-size: 0.8rem; color: var(--text-muted);">Дата начала обучения</label>
                                             {{ cat_form.start_date(type="date", class="form-control") }}
                                             {% for err in cat_form.start_date.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                                         </div>
                                         <div class="form-group col-1 {% if cat_form.end_date.errors %}has-error{% endif %}">
-                                            <label style="font-size: 0.8rem; color: var(--text-muted);">Дата окончания</label>
+                                            <label style="font-size: 0.8rem; color: var(--text-muted);">Дата окончания обучения</label>
                                             {{ cat_form.end_date(type="date", class="form-control") }}
                                             {% for err in cat_form.end_date.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                                         </div>
                                     </div>
-                                </div>
-                                <button type="button" class="btn-remove-category" onclick="removeCategoryRow(this)" title="Удалить программу">✕</button>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
-                        </div>
+                        {% else %}
+                            <label style="font-weight: 700; color: var(--primary); display: block; margin-bottom: 10px;">
+                                Программы обучения для данного слушателя
+                            </label>
 
-                        <button type="button" class="btn-add-category" onclick="addCategoryRow(this)">
-                            + Добавить программу обучения
-                        </button>
+                            <div class="categories-container">
+                                {% for cat_form in student_form.student_categories %}
+                                <div class="category-row">
+                                    <div class="category-content">
+                                        <div class="form-group {% if cat_form.category.errors %}has-error{% endif %}" style="margin-bottom: 10px;">
+                                            {{ cat_form.category(class="category-select") }}
+                                            {% for err in cat_form.category.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group col-1 {% if cat_form.start_date.errors %}has-error{% endif %}">
+                                                <label style="font-size: 0.8rem; color: var(--text-muted);">Дата начала</label>
+                                                {{ cat_form.start_date(type="date", class="form-control") }}
+                                                {% for err in cat_form.start_date.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                                            </div>
+                                            <div class="form-group col-1 {% if cat_form.end_date.errors %}has-error{% endif %}">
+                                                <label style="font-size: 0.8rem; color: var(--text-muted);">Дата окончания</label>
+                                                {{ cat_form.end_date(type="date", class="form-control") }}
+                                                {% for err in cat_form.end_date.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn-remove-category" onclick="removeCategoryRow(this)" title="Удалить программу">✕</button>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <button type="button" class="btn-add-category" onclick="addCategoryRow(this)">
+                                + Добавить программу обучения
+                            </button>
+                        {% endif %}
                     </div>
 
                     <!-- ДОСТАВКА ДИПЛОМА -->
@@ -390,6 +431,9 @@
 {% block scripts %}
 <script>
 const PROGRAM_CHOICES = {{ program_choices | tojson }};
+const FIXED_PROGRAM_CODE = {{ (fixed_program.code if fixed_program else None) | tojson }};
+const FIXED_PROGRAM_TITLE = {{ (fixed_program.title if fixed_program else None) | tojson }};
+const FIXED_PROGRAM_HOURS = {{ (fixed_program.hours if fixed_program else None) | tojson }};
 
 // --- Форматирование маски телефона: +7 (XXX) XXX-XX-XX ---
 function formatPhoneNumber(val) {
@@ -669,34 +713,56 @@ function addNewStudent() {
         </div>
 
         <div class="categories-wrapper">
-            <label style="font-weight: 700; color: var(--primary); display: block; margin-bottom: 10px;">
-                Программы обучения для данного слушателя
-            </label>
-            <div class="categories-container">
-                <div class="category-row">
-                    <div class="category-content">
-                        <div style="margin-bottom: 10px;">
-                            <select name="students-${sIdx}-student_categories-0-category" class="category-select" required>
-                                ${optionsHtml}
-                            </select>
+            ${FIXED_PROGRAM_CODE ? `
+                <div class="fixed-program-card">
+                    <span class="badge-status badge-submitted" style="font-size: 0.8rem; margin-bottom: 6px;">
+                        Программа обучения (единая для всех слушателей в заявке)
+                    </span>
+                    <div style="font-weight: 700; color: var(--primary); font-size: 1rem; margin-bottom: 12px; line-height: 1.4;">
+                        ${FIXED_PROGRAM_TITLE} (${FIXED_PROGRAM_HOURS} ак. ч.)
+                    </div>
+                    <input type="hidden" name="students-${sIdx}-student_categories-0-category" value="${FIXED_PROGRAM_CODE}">
+                    <div class="form-row">
+                        <div class="form-group col-1">
+                            <label style="font-size: 0.8rem; color: var(--text-muted);">Дата начала обучения</label>
+                            <input type="date" name="students-${sIdx}-student_categories-0-start_date" class="form-control" required>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group col-1">
-                                <label style="font-size: 0.8rem; color: var(--text-muted);">Дата начала</label>
-                                <input type="date" name="students-${sIdx}-student_categories-0-start_date" class="form-control" required>
-                            </div>
-                            <div class="form-group col-1">
-                                <label style="font-size: 0.8rem; color: var(--text-muted);">Дата окончания</label>
-                                <input type="date" name="students-${sIdx}-student_categories-0-end_date" class="form-control" required>
-                            </div>
+                        <div class="form-group col-1">
+                            <label style="font-size: 0.8rem; color: var(--text-muted);">Дата окончания обучения</label>
+                            <input type="date" name="students-${sIdx}-student_categories-0-end_date" class="form-control" required>
                         </div>
                     </div>
-                    <button type="button" class="btn-remove-category" onclick="removeCategoryRow(this)" title="Удалить программу">✕</button>
                 </div>
-            </div>
-            <button type="button" class="btn-add-category" onclick="addCategoryRow(this)">
-                + Добавить программу обучения
-            </button>
+            ` : `
+                <label style="font-weight: 700; color: var(--primary); display: block; margin-bottom: 10px;">
+                    Программы обучения для данного слушателя
+                </label>
+                <div class="categories-container">
+                    <div class="category-row">
+                        <div class="category-content">
+                            <div style="margin-bottom: 10px;">
+                                <select name="students-${sIdx}-student_categories-0-category" class="category-select" required>
+                                    ${optionsHtml}
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-1">
+                                    <label style="font-size: 0.8rem; color: var(--text-muted);">Дата начала</label>
+                                    <input type="date" name="students-${sIdx}-student_categories-0-start_date" class="form-control" required>
+                                </div>
+                                <div class="form-group col-1">
+                                    <label style="font-size: 0.8rem; color: var(--text-muted);">Дата окончания</label>
+                                    <input type="date" name="students-${sIdx}-student_categories-0-end_date" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-remove-category" onclick="removeCategoryRow(this)" title="Удалить программу">✕</button>
+                    </div>
+                </div>
+                <button type="button" class="btn-add-category" onclick="addCategoryRow(this)">
+                    + Добавить программу обучения
+                </button>
+            `}
         </div>
 
         <div class="form-row">

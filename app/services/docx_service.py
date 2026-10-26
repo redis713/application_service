@@ -2,7 +2,7 @@ import io
 import os
 from typing import Dict, Any, List
 from docxtpl import DocxTemplate
-from app.constants import StudyForm, DeliveryType
+from app.constants import StudyForm, TrainingDirection, DeliveryType
 
 class DocxService:
     @staticmethod
@@ -124,6 +124,7 @@ class DocxService:
                 "num": index,
                 "name": name_cell,
                 "education": edu_cell,
+                "pb_education": item.get("pb_education", "") or "-",
                 "position": position,
                 "category": category_cell,
                 "date": date_cell,
@@ -131,18 +132,19 @@ class DocxService:
                 "email": student_email
             })
 
-        # Универсальный словарь для обоих шаблонов:
+        # Универсальный словарь для всех 7 утвержденных шаблонов:
         context = {
-            # Ключи для dist:
+            # Ключи для dist, pb, 112, antiterror, specialist:
             "organization_name": org_display_name,
             "fio_boss": boss_display,
+            "boss_position": boss_pos,
             "ogrn": requisites_block,
             "fakt_address": fakt_addr,
             "yur_address": yur_addr,
             "telephone": phone,
             "email": email,
             "doljnost_executor": executor_block,
-            # Ключи для ochno:
+            # Ключи для gochs-ochno:
             "org_name": org_display_name,
             "director_name": boss_display,
             "org_requisites": requisites_block,
@@ -158,11 +160,27 @@ class DocxService:
         return context
 
     @classmethod
-    def generate_docx_stream(cls, org_data: Dict[str, Any], listeners_data: List[Dict[str, Any]], study_form: str = "distant", templates_dir: str = "docx_templates") -> io.BytesIO:
+    def generate_docx_stream(
+        cls,
+        org_data: Dict[str, Any],
+        listeners_data: List[Dict[str, Any]],
+        study_form: str = "distant",
+        direction: str = "gochs",
+        templates_dir: str = "docx_templates"
+    ) -> io.BytesIO:
         """
-        Генерирует готовый файл .docx в памяти (io.BytesIO) без создания временных файлов на диске.
+        Генерирует готовый файл .docx в памяти (io.BytesIO) на основе формы и направления обучения.
         """
-        template_name = "gochs-ochno.docx" if study_form == StudyForm.OCHNO.value else "gochs-dist.docx"
+        template_map = {
+            (StudyForm.DISTANT.value, TrainingDirection.GOCHS.value): "gochs-dist.docx",
+            (StudyForm.DISTANT.value, TrainingDirection.FIRE.value): "pb-dist.docx",
+            (StudyForm.DISTANT.value, TrainingDirection.ANTITERROR.value): "antiterror.docx",
+            (StudyForm.OCHNO.value, TrainingDirection.GOCHS.value): "gochs-ochno.docx",
+            (StudyForm.OCHNO.value, TrainingDirection.FIRE.value): "pb-ochno.docx",
+            (StudyForm.OCHNO.value, TrainingDirection.CALL112.value): "112.docx",
+            (StudyForm.OCHNO.value, TrainingDirection.SPECIALIST.value): "specialist.docx",
+        }
+        template_name = template_map.get((study_form, direction), "gochs-dist.docx")
         template_path = os.path.join(templates_dir, template_name)
 
         if not os.path.exists(template_path):

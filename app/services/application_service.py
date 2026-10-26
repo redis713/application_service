@@ -40,6 +40,7 @@ class ApplicationService:
             TrainingDirection.FIRE.value: "ПБ",
             TrainingDirection.CALL112.value: "112",
             TrainingDirection.ANTITERROR.value: "АТ",
+            TrainingDirection.SPECIALIST.value: "СПГО",
         }
         prefix = prefix_map.get(direction, "ЗЯВ")
         year = datetime.now().year

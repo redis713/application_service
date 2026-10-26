@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}{{ direction_label }} — Выбор категории обучения{% endblock %}
+
+{% block nav_back %}
+<a href="{{ url_for('main.' + study_form) }}" style="color: #fff; text-decoration: none; font-weight: 600; font-size: 0.9rem; padding: 8px 16px; border: 1.5px solid rgba(255,255,255,0.4); border-radius: var(--radius-sm); transition: background 0.2s;">
+    ← Назад к выбору направления
+</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 10px auto 0 auto;">
+    <div class="hh2">
+        <span class="badge-status badge-submitted" style="margin-bottom: 12px;">{{ study_form_label }}</span>
+        <h2>{{ direction_label }}</h2>
+        <p style="color: var(--text-muted); font-size: 1.05rem; margin-top: 8px;">
+            В одной заявке оформляются слушатели по одной выбранной программе.<br>
+            Выберите интересующую категорию обучения для перехода к заполнению бланка:
+        </p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 25px;">
+        {% for program in programs %}
+        <a href="{{ url_for('apply.form_view', study_form=study_form, direction=direction, category=program.code) }}" class="type_study_a" style="text-decoration: none; color: inherit;">
+            <div class="program-select-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 260px;">
+                        <span class="badge-status badge-draft" style="font-size: 0.8rem; margin-bottom: 6px;">{{ program.hours }} ак. ч.</span>
+                        <h3 style="margin: 6px 0; color: var(--text-main); font-size: 1.05rem; line-height: 1.45;">
+                            {{ program.title }}
+                        </h3>
+                    </div>
+                    <div style="display: flex; align-items: center; align-self: center;">
+                        <span class="btn-outline-action" style="pointer-events: none; white-space: nowrap;">
+                            Выбрать →
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

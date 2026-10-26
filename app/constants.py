@@ -18,6 +18,7 @@ class TrainingDirection(str, enum.Enum):
     FIRE = "fire"
     CALL112 = "112"
     ANTITERROR = "antiterror"
+    SPECIALIST = "specialist"
 
     @classmethod
     def label(cls, value: str) -> str:
@@ -26,6 +27,7 @@ class TrainingDirection(str, enum.Enum):
             cls.FIRE: "Пожарная безопасность",
             cls.CALL112: "Система 112",
             cls.ANTITERROR: "Антитеррористическая защищенность",
+            cls.SPECIALIST: "Специалист по гражданской обороне (250 часов)",
         }
         return labels.get(value, value)
 
