@@ -14,11 +14,14 @@
 <body>
 
     <header class="header-banner">
-        <div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-            <div>
-                <h1>ГБУ ДПО «УМЦ ГОЧС и ПБ Иркутской области»</h1>
-                <p>Электронный сервис подачи заявок на дополнительное профессиональное образование</p>
-            </div>
+        <div class="header-content">
+            <a href="{{ url_for('main.index') }}" class="header-brand">
+                <img src="{{ url_for('static', filename='images/logo.webp') }}" alt="Логотип УМЦ ГОЧС и ПБ" class="header-logo">
+                <div class="header-titles">
+                    <h1>ГБУ ДПО «УМЦ ГОЧС и ПБ Иркутской области»</h1>
+                    <p>Электронный сервис подачи заявок на дополнительное профессиональное образование</p>
+                </div>
+            </a>
             {% block nav_back %}
             {% endblock %}
         </div>

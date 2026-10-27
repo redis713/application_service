@@ -36,6 +36,11 @@ def get_program_choices(direction: str, study_form: str):
     return choices
 
 
+def add_field_error(field, message: str):
+    """Безопасно добавляет ошибку валидации к полю формы WTForms."""
+    field.errors = list(field.errors or ()) + [message]
+
+
 def extract_form_data(form: ApplicationForm):
     """Извлекает нормализованные словари данных организации и слушателей из формы."""
     org_data = {
@@ -163,46 +168,47 @@ def form_view(study_form: str, direction: str):
             if fixed_program and not cat_form.category.data:
                 cat_form.category.data = fixed_program.code
 
-    is_valid = form.validate_on_submit()
-    if direction == TrainingDirection.FIRE.value:
-        for s_form in form.students:
-            if not s_form.fire_safety_document_type.data:
-                s_form.fire_safety_document_type.errors.append("Выберите основание пожарного образования.")
-                is_valid = False
-            if not s_form.fire_series.data or not s_form.fire_series.data.strip():
-                s_form.fire_series.errors.append("Укажите серию документа.")
-                is_valid = False
-            if not s_form.fire_number.data or not s_form.fire_number.data.strip():
-                s_form.fire_number.errors.append("Укажите номер документа.")
-                is_valid = False
-            if not s_form.fire_date.data or not s_form.fire_date.data.strip():
-                s_form.fire_date.errors.append("Укажите дату выдачи документа.")
-                is_valid = False
+    if request.method == "POST":
+        is_valid = form.validate_on_submit()
+        if direction == TrainingDirection.FIRE.value:
+            for s_form in form.students:
+                if not s_form.fire_safety_document_type.data:
+                    add_field_error(s_form.fire_safety_document_type, "Выберите основание пожарного образования.")
+                    is_valid = False
+                if not s_form.fire_series.data or not s_form.fire_series.data.strip():
+                    add_field_error(s_form.fire_series, "Укажите серию документа.")
+                    is_valid = False
+                if not s_form.fire_number.data or not s_form.fire_number.data.strip():
+                    add_field_error(s_form.fire_number, "Укажите номер документа.")
+                    is_valid = False
+                if not s_form.fire_date.data or not s_form.fire_date.data.strip():
+                    add_field_error(s_form.fire_date, "Укажите дату выдачи документа.")
+                    is_valid = False
 
-    if is_valid:
-        try:
-            org_data, students_data = extract_form_data(form)
+        if is_valid:
+            try:
+                org_data, students_data = extract_form_data(form)
 
-            # Если программа зафиксирована, гарантируем ее установку для всех слушателей
-            if fixed_program:
-                for s in students_data:
-                    for c in s.get("student_categories", []):
-                        if not c.get("category"):
-                            c["category"] = fixed_program.code
+                # Если программа зафиксирована, гарантируем ее установку для всех слушателей
+                if fixed_program:
+                    for s in students_data:
+                        for c in s.get("student_categories", []):
+                            if not c.get("category"):
+                                c["category"] = fixed_program.code
 
-            # Сохраняем черновик заявки
-            application = ApplicationService.create_application_draft(
-                org_data=org_data,
-                students_data=students_data,
-                direction=direction,
-                study_form=study_form
-            )
+                # Сохраняем черновик заявки
+                application = ApplicationService.create_application_draft(
+                    org_data=org_data,
+                    students_data=students_data,
+                    direction=direction,
+                    study_form=study_form
+                )
 
-            flash(f"Заявка № {application.app_number} успешно сформирована!", "success")
-            return redirect(url_for("apply.status_view", token=application.secret_token, download="1"))
+                flash(f"Заявка № {application.app_number} успешно сформирована!", "success")
+                return redirect(url_for("apply.status_view", token=application.secret_token, download="1"))
 
-        except Exception as e:
-            flash(f"Ошибка при сохранении заявки: {str(e)}", "danger")
+            except Exception as e:
+                flash(f"Ошибка при сохранении заявки: {str(e)}", "danger")
 
     return render_template(
         "apply/form.html",
@@ -249,16 +255,16 @@ def edit_view(token: str):
         if application.direction == TrainingDirection.FIRE.value:
             for s_form in form.students:
                 if not s_form.fire_safety_document_type.data:
-                    s_form.fire_safety_document_type.errors.append("Выберите основание пожарного образования.")
+                    add_field_error(s_form.fire_safety_document_type, "Выберите основание пожарного образования.")
                     is_valid = False
                 if not s_form.fire_series.data or not s_form.fire_series.data.strip():
-                    s_form.fire_series.errors.append("Укажите серию документа.")
+                    add_field_error(s_form.fire_series, "Укажите серию документа.")
                     is_valid = False
                 if not s_form.fire_number.data or not s_form.fire_number.data.strip():
-                    s_form.fire_number.errors.append("Укажите номер документа.")
+                    add_field_error(s_form.fire_number, "Укажите номер документа.")
                     is_valid = False
                 if not s_form.fire_date.data or not s_form.fire_date.data.strip():
-                    s_form.fire_date.errors.append("Укажите дату выдачи документа.")
+                    add_field_error(s_form.fire_date, "Укажите дату выдачи документа.")
                     is_valid = False
 
         if is_valid:
