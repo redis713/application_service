@@ -84,31 +84,21 @@ body {
 .header-brand {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 18px;
     text-decoration: none;
     color: #ffffff;
-    transition: opacity 0.2s ease;
-}
-
-.header-brand:hover {
-    opacity: 0.95;
 }
 
 .header-logo {
-    height: 60px;
-    width: 60px;
+    height: 72px;
+    width: 72px;
     object-fit: contain;
     flex-shrink: 0;
     filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.28));
-    transition: transform 0.2s ease;
-}
-
-.header-brand:hover .header-logo {
-    transform: scale(1.03);
 }
 
 .header-titles h1 {
-    font-size: 1.4rem;
+    font-size: 1.45rem;
     font-weight: 700;
     letter-spacing: -0.01em;
     margin: 0;
@@ -116,7 +106,7 @@ body {
 }
 
 .header-titles p {
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     color: #cbd5e1;
     margin: 4px 0 0 0;
     line-height: 1.35;
@@ -124,8 +114,8 @@ body {
 
 @media (max-width: 640px) {
     .header-logo {
-        height: 46px;
-        width: 46px;
+        height: 52px;
+        width: 52px;
     }
     .header-titles h1 {
         font-size: 1.15rem;
