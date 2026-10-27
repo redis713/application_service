@@ -119,7 +119,18 @@ assert res_download.mimetype == "application/vnd.openxmlformats-officedocument.w
 print(f"   [OK] Бланк успешно скачан через GET /apply/download/{token} ({len(res_download.data)} байт)")
 
 print("\n5. Тестирование прикрепления подписанного скана (Шаг 3):")
-fake_pdf = io.BytesIO(b"%PDF-1.4 test scan content of signed document")
+valid_pdf_content = (
+    b"%PDF-1.4\n"
+    b"1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+    b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
+    b"3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\n"
+    b"xref\n0 4\n0000000000 65535 f \n"
+    b"0000000010 00000 n \n"
+    b"0000000053 00000 n \n"
+    b"0000000102 00000 n \n"
+    b"trailer<</Size 4/Root 1 0 R>>\nstartxref\n180\n%%EOF\n"
+)
+fake_pdf = io.BytesIO(valid_pdf_content)
 res_upload = client.post(
     f"/apply/status/{token}",
     data={"scan_file": (fake_pdf, "signed_application.pdf")},

@@ -145,9 +145,14 @@ class ApplicationService:
                 email=_s(student_data.get("student_email")),
                 education_level=_s(student_data.get("education")),
                 institute_name=_s(student_data.get("institute_name")),
-                diploma_series_number=_s(student_data.get("diploma_seriesnumber")),
-                diploma_date=_s(student_data.get("diploma_date")),
-                diploma_lastname=_s(student_data.get("diploma_lastname"))
+                diploma_series_number=_s(student_data.get("diploma_seriesnumber")) or None,
+                diploma_date=_s(student_data.get("diploma_date")) or None,
+                diploma_lastname=_s(student_data.get("diploma_lastname")) or None,
+                fire_safety_document_type=_s(student_data.get("fire_safety_document_type")) or None,
+                fire_institution=_s(student_data.get("fire_institution")) or None,
+                fire_series=_s(student_data.get("fire_series")) or None,
+                fire_number=_s(student_data.get("fire_number")) or None,
+                fire_date=_s(student_data.get("fire_date")) or None
             )
             db.session.add(person)
         else:
@@ -162,6 +167,12 @@ class ApplicationService:
             person.diploma_series_number = _s(student_data.get("diploma_seriesnumber")) or person.diploma_series_number
             person.diploma_date = _s(student_data.get("diploma_date")) or person.diploma_date
             person.diploma_lastname = _s(student_data.get("diploma_lastname")) or person.diploma_lastname
+            if student_data.get("fire_safety_document_type"):
+                person.fire_safety_document_type = _s(student_data.get("fire_safety_document_type"))
+                person.fire_institution = _s(student_data.get("fire_institution")) or None
+                person.fire_series = _s(student_data.get("fire_series")) or None
+                person.fire_number = _s(student_data.get("fire_number")) or None
+                person.fire_date = _s(student_data.get("fire_date")) or None
 
         db.session.flush()
         return person
@@ -318,6 +329,11 @@ class ApplicationService:
                 "student_email": p.email,
                 "diploma_delivery": l.diploma_delivery,
                 "delivery_address": l.delivery_address or "",
+                "fire_safety_document_type": p.fire_safety_document_type or "",
+                "fire_institution": p.fire_institution or "",
+                "fire_series": p.fire_series or "",
+                "fire_number": p.fire_number or "",
+                "fire_date": p.fire_date or "",
                 "student_categories": categories,
             })
 

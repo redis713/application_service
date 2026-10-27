@@ -11,6 +11,7 @@ from wtforms import (
     HiddenField,
 )
 from wtforms.validators import DataRequired, Email, Optional, ValidationError
+from app.constants import FIRE_DOCUMENT_CHOICES
 
 NAME_REGEX = r"^[А-ЯЁ][а-яё]+(?:[- ][А-ЯЁ][а-яё]+)*$"
 
@@ -96,9 +97,35 @@ class StudentForm(FlaskForm):
         validators=[DataRequired(message="Выберите уровень образования")]
     )
     institute_name = StringField("Наименование учебного заведения", validators=[DataRequired(message="Укажите учебное заведение")])
-    diploma_seriesnumber = StringField("Серия и номер диплома", validators=[DataRequired(message="Укажите серию и номер диплома")])
-    diploma_date = StringField("Дата выдачи диплома", validators=[DataRequired(message="Укажите дату выдачи диплома")])
-    diploma_lastname = StringField("Фамилия в дипломе", validators=[DataRequired(message="Укажите фамилию в дипломе")])
+    diploma_seriesnumber = StringField("Серия и номер диплома", validators=[Optional()])
+    diploma_date = StringField("Дата выдачи диплома", validators=[Optional()])
+    diploma_lastname = StringField("Фамилия в дипломе", validators=[Optional()])
+
+    def validate_diploma_seriesnumber(self, field):
+        if self.education.data != "Неоконченное высшее (студент)":
+            if not field.data or not field.data.strip():
+                raise ValidationError("Укажите серию и номер диплома")
+
+    def validate_diploma_date(self, field):
+        if self.education.data != "Неоконченное высшее (студент)":
+            if not field.data or not field.data.strip():
+                raise ValidationError("Укажите дату выдачи диплома")
+
+    def validate_diploma_lastname(self, field):
+        if self.education.data != "Неоконченное высшее (студент)":
+            if not field.data or not field.data.strip():
+                raise ValidationError("Укажите фамилию в дипломе")
+
+    # Поля квалификации в области пожарной безопасности (заполняются при направлении 'fire')
+    fire_safety_document_type = SelectField(
+        "Основание пожарного образования",
+        choices=FIRE_DOCUMENT_CHOICES,
+        validators=[Optional()]
+    )
+    fire_institution = StringField("Образовательное учреждение, выдавшее документ", validators=[Optional()])
+    fire_series = StringField("Серия документа", validators=[Optional()])
+    fire_number = StringField("Номер документа", validators=[Optional()])
+    fire_date = StringField("Дата выдачи документа", validators=[Optional()])
 
     snils = StringField("СНИЛС", validators=[DataRequired(message="Укажите СНИЛС"), validate_snils])
     student_telephone = StringField("Телефон слушателя", validators=[DataRequired(message="Укажите телефон"), validate_phone])

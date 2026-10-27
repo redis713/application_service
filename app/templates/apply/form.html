@@ -255,7 +255,7 @@
                     <div class="form-row">
                         <div class="form-group col-1 {% if student_form.education.errors %}has-error{% endif %}">
                             {{ student_form.education.label }}
-                            {{ student_form.education(class="form-control") }}
+                            {{ student_form.education(class="form-control education-select", onchange="handleEducationChange(this)") }}
                             {% for err in student_form.education.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
                         <div class="form-group col-2 {% if student_form.institute_name.errors %}has-error{% endif %}">
@@ -265,23 +265,64 @@
                         </div>
                     </div>
 
-                    <div class="form-row">
+                    <div class="form-row diploma-details-row">
                         <div class="form-group col-1 {% if student_form.diploma_seriesnumber.errors %}has-error{% endif %}">
                             {{ student_form.diploma_seriesnumber.label }}
-                            {{ student_form.diploma_seriesnumber(class="form-control", placeholder="Серия и номер") }}
+                            {{ student_form.diploma_seriesnumber(class="form-control diploma-input", placeholder="Серия и номер") }}
                             {% for err in student_form.diploma_seriesnumber.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
                         <div class="form-group col-1 {% if student_form.diploma_date.errors %}has-error{% endif %}">
                             {{ student_form.diploma_date.label }}
-                            {{ student_form.diploma_date(class="form-control", placeholder="дд.мм.гггг") }}
+                            {{ student_form.diploma_date(class="form-control diploma-input", placeholder="дд.мм.гггг") }}
                             {% for err in student_form.diploma_date.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
                         <div class="form-group col-1 {% if student_form.diploma_lastname.errors %}has-error{% endif %}">
                             {{ student_form.diploma_lastname.label }}
-                            {{ student_form.diploma_lastname(class="form-control", placeholder="Фамилия в дипломе") }}
+                            {{ student_form.diploma_lastname(class="form-control diploma-input", placeholder="Фамилия в дипломе") }}
                             {% for err in student_form.diploma_lastname.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
                     </div>
+
+                    {% if direction == 'fire' %}
+                    <div class="fire-safety-card" style="margin: 18px 0; padding: 16px 20px; background: #fffaf0; border: 1.5px solid #fed7aa; border-radius: var(--radius-md); box-shadow: 0 1px 3px rgba(234, 88, 12, 0.08);">
+                        <div style="font-weight: 700; color: #c2410c; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;">
+                            <span>🔥</span>
+                            <span>Сведения о профильном пожарном образовании слушателя</span>
+                        </div>
+                        <p style="margin: 0 0 14px 0; color: #9a3412; font-size: 0.85rem; line-height: 1.45;">
+                            Для зачисления по направлению пожарной безопасности необходимо подтвердить наличие профильного образования. Выберите один из 3 вариантов и заполните реквизиты:
+                        </p>
+
+                        <div class="form-group {% if student_form.fire_safety_document_type.errors %}has-error{% endif %}" style="margin-bottom: 14px;">
+                            {{ student_form.fire_safety_document_type.label }} <span style="color: #ef4444; font-weight: bold;">*</span>
+                            {{ student_form.fire_safety_document_type(class="form-control", required="required") }}
+                            {% for err in student_form.fire_safety_document_type.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-2 {% if student_form.fire_institution.errors %}has-error{% endif %}">
+                                {{ student_form.fire_institution.label }}
+                                {{ student_form.fire_institution(class="form-control", placeholder="Учебное заведение (если отличается от основного)") }}
+                                {% for err in student_form.fire_institution.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                            </div>
+                            <div class="form-group col-1 {% if student_form.fire_series.errors %}has-error{% endif %}">
+                                {{ student_form.fire_series.label }} <span style="color: #ef4444; font-weight: bold;">*</span>
+                                {{ student_form.fire_series(class="form-control", placeholder="Серия", required="required") }}
+                                {% for err in student_form.fire_series.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                            </div>
+                            <div class="form-group col-1 {% if student_form.fire_number.errors %}has-error{% endif %}">
+                                {{ student_form.fire_number.label }} <span style="color: #ef4444; font-weight: bold;">*</span>
+                                {{ student_form.fire_number(class="form-control", placeholder="Номер", required="required") }}
+                                {% for err in student_form.fire_number.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                            </div>
+                            <div class="form-group col-1 {% if student_form.fire_date.errors %}has-error{% endif %}">
+                                {{ student_form.fire_date.label }} <span style="color: #ef4444; font-weight: bold;">*</span>
+                                {{ student_form.fire_date(class="form-control", placeholder="дд.мм.гггг", required="required") }}
+                                {% for err in student_form.fire_date.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
 
                     <div class="form-row">
                         <div class="form-group col-1 {% if student_form.snils.errors %}has-error{% endif %}">
@@ -309,7 +350,7 @@
                                     Программа обучения (единая для всех слушателей в заявке)
                                 </span>
                                 <div style="font-weight: 700; color: var(--primary); font-size: 1rem; margin-bottom: 12px; line-height: 1.4;">
-                                    {{ fixed_program.title }} ({{ fixed_program.hours }} ак. ч.)
+                                    {{ fixed_program.title }} ({{ fixed_program.hours }} ч.)
                                 </div>
                                 {% set student_idx = loop.index0 %}
                                 {% for cat_form in student_form.student_categories %}
@@ -434,6 +475,34 @@ const PROGRAM_CHOICES = {{ program_choices | tojson }};
 const FIXED_PROGRAM_CODE = {{ (fixed_program.code if fixed_program else None) | tojson }};
 const FIXED_PROGRAM_TITLE = {{ (fixed_program.title if fixed_program else None) | tojson }};
 const FIXED_PROGRAM_HOURS = {{ (fixed_program.hours if fixed_program else None) | tojson }};
+const IS_FIRE_DIRECTION = {{ (direction == 'fire') | tojson }};
+
+const FIRE_DOCUMENT_OPTIONS = [
+    { value: "", text: "Выберите документ о квалификации в области пожарной безопасности" },
+    { value: "specialty", text: "1) Диплом по специальности «Пожарная безопасность» или направлению подготовки «Техносферная безопасность»" },
+    { value: "retraining", text: "2) Диплом по профессиональной переподготовке с получением квалификации «Специалист по противопожарной профилактике»" },
+    { value: "competencies", text: "3) Диплом и приложение к диплому, подтверждающее получение компетенций в области ПБ (в рамках СПО / ВО)" }
+];
+
+function handleEducationChange(selectEl) {
+    const card = selectEl.closest(".student-card");
+    if (!card) return;
+    const diplomaRow = card.querySelector(".diploma-details-row");
+    if (!diplomaRow) return;
+    const isStudent = selectEl.value === "Неоконченное высшее (студент)";
+    if (isStudent) {
+        diplomaRow.style.display = "none";
+        diplomaRow.querySelectorAll(".diploma-input").forEach(input => {
+            input.removeAttribute("required");
+            input.value = "";
+        });
+    } else {
+        diplomaRow.style.display = "flex";
+        diplomaRow.querySelectorAll(".diploma-input").forEach(input => {
+            input.setAttribute("required", "required");
+        });
+    }
+}
 
 // --- Форматирование маски телефона: +7 (XXX) XXX-XX-XX ---
 function formatPhoneNumber(val) {
@@ -669,7 +738,7 @@ function addNewStudent() {
         <div class="form-row">
             <div class="form-group col-1">
                 <label>Уровень образования</label>
-                <select name="students-${sIdx}-education" class="form-control" required>
+                <select name="students-${sIdx}-education" class="form-control education-select" onchange="handleEducationChange(this)" required>
                     <option value="">Выберите уровень образования</option>
                     <option value="Высшее образование">Высшее образование</option>
                     <option value="Среднее профессиональное">Среднее профессиональное образование</option>
@@ -682,20 +751,58 @@ function addNewStudent() {
             </div>
         </div>
 
-        <div class="form-row">
+        <div class="form-row diploma-details-row">
             <div class="form-group col-1">
                 <label>Серия и номер диплома</label>
-                <input type="text" name="students-${sIdx}-diploma_seriesnumber" class="form-control" placeholder="Серия и номер" required>
+                <input type="text" name="students-${sIdx}-diploma_seriesnumber" class="form-control diploma-input" placeholder="Серия и номер" required>
             </div>
             <div class="form-group col-1">
                 <label>Дата выдачи диплома</label>
-                <input type="text" name="students-${sIdx}-diploma_date" class="form-control" placeholder="дд.мм.гггг" required>
+                <input type="text" name="students-${sIdx}-diploma_date" class="form-control diploma-input" placeholder="дд.мм.гггг" required>
             </div>
             <div class="form-group col-1">
                 <label>Фамилия в дипломе</label>
-                <input type="text" name="students-${sIdx}-diploma_lastname" class="form-control" placeholder="Фамилия в дипломе" required>
+                <input type="text" name="students-${sIdx}-diploma_lastname" class="form-control diploma-input" placeholder="Фамилия в дипломе" required>
             </div>
         </div>
+
+        ${IS_FIRE_DIRECTION ? `
+            <div class="fire-safety-card" style="margin: 18px 0; padding: 16px 20px; background: #fffaf0; border: 1.5px solid #fed7aa; border-radius: var(--radius-md); box-shadow: 0 1px 3px rgba(234, 88, 12, 0.08);">
+                <div style="font-weight: 700; color: #c2410c; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;">
+                    <span>🔥</span>
+                    <span>Сведения о профильном пожарном образовании слушателя</span>
+                </div>
+                <p style="margin: 0 0 14px 0; color: #9a3412; font-size: 0.85rem; line-height: 1.45;">
+                    Для зачисления по направлению пожарной безопасности необходимо подтвердить наличие профильного образования. Выберите один из 3 вариантов и заполните реквизиты:
+                </p>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label>Основание пожарного образования <span style="color: #ef4444; font-weight: bold;">*</span></label>
+                    <select name="students-${sIdx}-fire_safety_document_type" class="form-control" required>
+                        ${FIRE_DOCUMENT_OPTIONS.map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('')}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-2">
+                        <label>Образовательное учреждение, выдавшее документ</label>
+                        <input type="text" name="students-${sIdx}-fire_institution" class="form-control" placeholder="Учебное заведение (если отличается от основного)">
+                    </div>
+                    <div class="form-group col-1">
+                        <label>Серия документа <span style="color: #ef4444; font-weight: bold;">*</span></label>
+                        <input type="text" name="students-${sIdx}-fire_series" class="form-control" placeholder="Серия" required>
+                    </div>
+                    <div class="form-group col-1">
+                        <label>Номер документа <span style="color: #ef4444; font-weight: bold;">*</span></label>
+                        <input type="text" name="students-${sIdx}-fire_number" class="form-control" placeholder="Номер" required>
+                    </div>
+                    <div class="form-group col-1">
+                        <label>Дата выдачи <span style="color: #ef4444; font-weight: bold;">*</span></label>
+                        <input type="text" name="students-${sIdx}-fire_date" class="form-control" placeholder="дд.мм.гггг" required>
+                    </div>
+                </div>
+            </div>
+        ` : ''}
 
         <div class="form-row">
             <div class="form-group col-1">
@@ -719,7 +826,7 @@ function addNewStudent() {
                         Программа обучения (единая для всех слушателей в заявке)
                     </span>
                     <div style="font-weight: 700; color: var(--primary); font-size: 1rem; margin-bottom: 12px; line-height: 1.4;">
-                        ${FIXED_PROGRAM_TITLE} (${FIXED_PROGRAM_HOURS} ак. ч.)
+                        ${FIXED_PROGRAM_TITLE} (${FIXED_PROGRAM_HOURS} ч.)
                     </div>
                     <input type="hidden" name="students-${sIdx}-student_categories-0-category" value="${FIXED_PROGRAM_CODE}">
                     <div class="form-row">
@@ -852,6 +959,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 7. Проверка способов доставки при загрузке
     document.querySelectorAll(".delivery-select").forEach(toggleDeliveryAddress);
+
+    // 7.1. Проверка уровня образования (скрытие диплома для неоконченного высшего)
+    document.querySelectorAll(".education-select").forEach(sel => {
+        handleEducationChange(sel);
+    });
 
     // 8. Умный скролл к первому полю с ошибкой (включая даты обучения, СНИЛС, КПП и т.д.)
     const firstError = document.querySelector(".has-error, .error-message");

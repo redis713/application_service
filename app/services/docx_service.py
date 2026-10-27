@@ -85,12 +85,56 @@ class DocxService:
             diploma_lastname = item.get("diploma_lastname", "")
             snils = item.get("snils", "")
 
-            edu_cell = (
-                f"{edu_level}\n\n"
-                f"{institute} {diploma_num}, {diploma_date}\n\n"
-                f"Фамилия в дипломе: {diploma_lastname}\n\n"
-                f"СНИЛС: {snils}"
-            )
+            if edu_level == "Неоконченное высшее (студент)":
+                edu_cell = (
+                    f"{edu_level}\n\n"
+                    f"{institute}\n\n"
+                    f"СНИЛС: {snils}"
+                )
+            else:
+                edu_dip_parts = []
+                if diploma_num:
+                    edu_dip_parts.append(str(diploma_num))
+                if diploma_date:
+                    edu_dip_parts.append(diploma_date)
+                edu_dip_str = f" {', '.join(edu_dip_parts)}" if edu_dip_parts else ""
+                dip_last_str = f"\n\nФамилия в дипломе: {diploma_lastname}" if diploma_lastname else ""
+                edu_cell = (
+                    f"{edu_level}\n\n"
+                    f"{institute}{edu_dip_str}"
+                    f"{dip_last_str}\n\n"
+                    f"СНИЛС: {snils}"
+                )
+
+            # Формирование сведений о пожарном образовании для соответствующих бланков
+            fire_doc_type = item.get("fire_safety_document_type")
+            if fire_doc_type:
+                from app.constants import FIRE_DOCUMENT_LABELS
+                doc_title = FIRE_DOCUMENT_LABELS.get(fire_doc_type, fire_doc_type)
+                fire_inst = item.get("fire_institution") or institute
+                f_series = item.get("fire_series") or ""
+                f_number = item.get("fire_number") or ""
+                f_date = cls._format_date(item.get("fire_date"))
+
+                parts = []
+                if fire_inst:
+                    parts.append(fire_inst)
+                if doc_title:
+                    parts.append(doc_title)
+
+                num_parts = []
+                if f_series:
+                    num_parts.append(f"серия {f_series}")
+                if f_number:
+                    num_parts.append(f"№ {f_number}")
+                if f_date:
+                    num_parts.append(f"дата выдачи {f_date}")
+                if num_parts:
+                    parts.append(", ".join(num_parts))
+
+                pb_edu_cell = "\n\n".join(parts) if parts else "-"
+            else:
+                pb_edu_cell = item.get("pb_education", "") or "-"
 
             position = item.get("position") or item.get("student_position", "")
 
@@ -124,7 +168,7 @@ class DocxService:
                 "num": index,
                 "name": name_cell,
                 "education": edu_cell,
-                "pb_education": item.get("pb_education", "") or "-",
+                "pb_education": pb_edu_cell,
                 "position": position,
                 "category": category_cell,
                 "date": date_cell,

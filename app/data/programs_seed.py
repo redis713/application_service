@@ -38,13 +38,13 @@ PROGRAMS_DATA = [
     {"code": "fulltime_cat34", "title": "ДПП повышения квалификации «Подготовка персонала дежурно-диспетчерских служб в рамках функционирования системы обеспечения вызова экстренных оперативных служб по единому номеру «112» (40 часов)", "hours": 40, "direction": "112", "study_form": "ochno"},
     {"code": "antiterror", "title": "ДПП повышения квалификации «Антитеррористическая защищенность» (36 часов)", "hours": 36, "direction": "antiterror", "study_form": "distant"},
     {"code": "specialist_go", "title": "ДПП профессиональной переподготовки «Специалист по гражданской обороне» (250 часов)", "hours": 250, "direction": "specialist", "study_form": "ochno"},
-    {"code": "distance_cat1", "title": "Заочная программа по ГОЧС 1", "hours": 36, "direction": "gochs", "study_form": "distant"},
-    {"code": "distance_cat2", "title": "Заочная программа по ГОЧС 2", "hours": 36, "direction": "gochs", "study_form": "distant"},
-    {"code": "distance_cat3", "title": "Заочная программа по ГОЧС 3", "hours": 36, "direction": "gochs", "study_form": "distant"},
 ]
 
 def seed_programs():
     """Заполняет или обновляет базу данных утвержденными программами обучения."""
+    # Удаляем устаревшие программы-заглушки, если они присутствуют
+    Program.query.filter(Program.code.in_(["distance_cat1", "distance_cat2", "distance_cat3"])).delete(synchronize_session=False)
+
     count = 0
     for p_data in PROGRAMS_DATA:
         prog = Program.query.filter_by(code=p_data["code"]).first()

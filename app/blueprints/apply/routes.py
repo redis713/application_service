@@ -88,6 +88,11 @@ def extract_form_data(form: ApplicationForm):
             "student_email": s_form.student_email.data,
             "diploma_delivery": s_form.diploma_delivery.data,
             "delivery_address": s_form.delivery_address.data,
+            "fire_safety_document_type": s_form.fire_safety_document_type.data,
+            "fire_institution": s_form.fire_institution.data,
+            "fire_series": s_form.fire_series.data,
+            "fire_number": s_form.fire_number.data,
+            "fire_date": s_form.fire_date.data,
             "student_categories": s_categories,
         })
 
@@ -158,7 +163,23 @@ def form_view(study_form: str, direction: str):
             if fixed_program and not cat_form.category.data:
                 cat_form.category.data = fixed_program.code
 
-    if form.validate_on_submit():
+    is_valid = form.validate_on_submit()
+    if direction == TrainingDirection.FIRE.value:
+        for s_form in form.students:
+            if not s_form.fire_safety_document_type.data:
+                s_form.fire_safety_document_type.errors.append("Выберите основание пожарного образования.")
+                is_valid = False
+            if not s_form.fire_series.data or not s_form.fire_series.data.strip():
+                s_form.fire_series.errors.append("Укажите серию документа.")
+                is_valid = False
+            if not s_form.fire_number.data or not s_form.fire_number.data.strip():
+                s_form.fire_number.errors.append("Укажите номер документа.")
+                is_valid = False
+            if not s_form.fire_date.data or not s_form.fire_date.data.strip():
+                s_form.fire_date.errors.append("Укажите дату выдачи документа.")
+                is_valid = False
+
+    if is_valid:
         try:
             org_data, students_data = extract_form_data(form)
 
@@ -224,7 +245,23 @@ def edit_view(token: str):
             for cat_form in student_form.student_categories:
                 cat_form.category.choices = choices
 
-        if form.validate_on_submit():
+        is_valid = form.validate_on_submit()
+        if application.direction == TrainingDirection.FIRE.value:
+            for s_form in form.students:
+                if not s_form.fire_safety_document_type.data:
+                    s_form.fire_safety_document_type.errors.append("Выберите основание пожарного образования.")
+                    is_valid = False
+                if not s_form.fire_series.data or not s_form.fire_series.data.strip():
+                    s_form.fire_series.errors.append("Укажите серию документа.")
+                    is_valid = False
+                if not s_form.fire_number.data or not s_form.fire_number.data.strip():
+                    s_form.fire_number.errors.append("Укажите номер документа.")
+                    is_valid = False
+                if not s_form.fire_date.data or not s_form.fire_date.data.strip():
+                    s_form.fire_date.errors.append("Укажите дату выдачи документа.")
+                    is_valid = False
+
+        if is_valid:
             try:
                 org_data, students_data = extract_form_data(form)
                 if fixed_program:
@@ -351,6 +388,11 @@ def download_docx(token: str):
             "email": p.email,
             "diploma_delivery": l.diploma_delivery,
             "delivery_address": l.delivery_address or "",
+            "fire_safety_document_type": p.fire_safety_document_type,
+            "fire_institution": p.fire_institution,
+            "fire_series": p.fire_series,
+            "fire_number": p.fire_number,
+            "fire_date": p.fire_date,
             "courses": courses,
         })
 
