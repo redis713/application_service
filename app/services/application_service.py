@@ -133,6 +133,19 @@ class ApplicationService:
                 except ValueError:
                     birthdate = datetime.now().date()
 
+        raw_diploma = student_data.get("diploma_date")
+        diploma_date = raw_diploma
+        if isinstance(raw_diploma, str) and raw_diploma.strip():
+            diploma_date = None
+            for fmt in ("%Y-%m-%d", "%d.%m.%Y"):
+                try:
+                    diploma_date = datetime.strptime(raw_diploma.strip(), fmt).date()
+                    break
+                except ValueError:
+                    pass
+        elif not raw_diploma:
+            diploma_date = None
+
         if not person:
             person = Person(
                 snils=clean_snils,
@@ -146,7 +159,7 @@ class ApplicationService:
                 education_level=_s(student_data.get("education")),
                 institute_name=_s(student_data.get("institute_name")),
                 diploma_series_number=_s(student_data.get("diploma_seriesnumber")) or None,
-                diploma_date=_s(student_data.get("diploma_date")) or None,
+                diploma_date=diploma_date,
                 diploma_lastname=_s(student_data.get("diploma_lastname")) or None,
                 fire_safety_document_type=_s(student_data.get("fire_safety_document_type")) or None,
                 fire_institution=_s(student_data.get("fire_institution")) or None,
@@ -165,7 +178,7 @@ class ApplicationService:
             person.education_level = _s(student_data.get("education")) or person.education_level
             person.institute_name = _s(student_data.get("institute_name")) or person.institute_name
             person.diploma_series_number = _s(student_data.get("diploma_seriesnumber")) or person.diploma_series_number
-            person.diploma_date = _s(student_data.get("diploma_date")) or person.diploma_date
+            person.diploma_date = diploma_date
             person.diploma_lastname = _s(student_data.get("diploma_lastname")) or person.diploma_lastname
             if student_data.get("fire_safety_document_type"):
                 person.fire_safety_document_type = _s(student_data.get("fire_safety_document_type"))

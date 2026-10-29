@@ -10,7 +10,7 @@ from wtforms import (
     DateField,
     HiddenField,
 )
-from wtforms.validators import DataRequired, Email, Optional, ValidationError
+from wtforms.validators import DataRequired, Email, Optional, ValidationError, Length
 from app.constants import FIRE_DOCUMENT_CHOICES
 
 NAME_REGEX = r"^[А-ЯЁ][а-яё]+(?:[- ][А-ЯЁ][а-яё]+)*$"
@@ -49,6 +49,18 @@ def validate_phone(form, field):
         if len(val) != 11 or val[0] not in ("7", "8"):
             raise ValidationError("Укажите корректный номер телефона (например, +7 999 123-45-67).")
 
+def validate_bik(form, field):
+    if field.data:
+        val = re.sub(r"\D", "", field.data)
+        if len(val) != 9:
+            raise ValidationError("БИК должен содержать ровно 9 цифр.")
+
+def validate_account_number(form, field):
+    if field.data:
+        val = re.sub(r"\D", "", field.data)
+        if len(val) != 20:
+            raise ValidationError("Расчетный счет должен содержать ровно 20 цифр.")
+
 
 class CategoryForm(FlaskForm):
     class Meta:
@@ -60,10 +72,12 @@ class CategoryForm(FlaskForm):
     )
     start_date = DateField(
         "Дата начала обучения",
+        format=["%Y-%m-%d", "%d.%m.%Y"],
         validators=[DataRequired(message="Укажите дату начала")]
     )
     end_date = DateField(
         "Дата окончания обучения",
+        format=["%Y-%m-%d", "%d.%m.%Y"],
         validators=[DataRequired(message="Укажите дату окончания")]
     )
 
@@ -77,13 +91,13 @@ class StudentForm(FlaskForm):
     class Meta:
         csrf = False
 
-    student_lastname = StringField("Фамилия", validators=[DataRequired(message="Укажите фамилию"), validate_fio])
-    student_firstname = StringField("Имя", validators=[DataRequired(message="Укажите имя"), validate_fio])
-    student_patronymic = StringField("Отчество", validators=[Optional(), validate_fio])
-    student_birthdate = DateField("Дата рождения", validators=[DataRequired(message="Укажите дату рождения")])
-    citizenship = StringField("Гражданство", default="РФ", validators=[DataRequired(message="Укажите гражданство")])
+    student_lastname = StringField("Фамилия", validators=[DataRequired(message="Укажите фамилию"), validate_fio, Length(max=100)])
+    student_firstname = StringField("Имя", validators=[DataRequired(message="Укажите имя"), validate_fio, Length(max=100)])
+    student_patronymic = StringField("Отчество", validators=[Optional(), validate_fio, Length(max=100)])
+    student_birthdate = DateField("Дата рождения", format=["%Y-%m-%d", "%d.%m.%Y"], validators=[DataRequired(message="Укажите дату рождения")])
+    citizenship = StringField("Гражданство", default="РФ", validators=[DataRequired(message="Укажите гражданство"), Length(max=100)])
 
-    student_position = StringField("Должность в организации", validators=[DataRequired(message="Укажите должность")])
+    student_position = StringField("Должность в организации", validators=[DataRequired(message="Укажите должность"), Length(max=255)])
 
     # Базовое образование
     education = SelectField(
@@ -96,23 +110,23 @@ class StudentForm(FlaskForm):
         ],
         validators=[DataRequired(message="Выберите уровень образования")]
     )
-    institute_name = StringField("Наименование учебного заведения", validators=[DataRequired(message="Укажите учебное заведение")])
-    diploma_seriesnumber = StringField("Серия и номер диплома", validators=[Optional()])
-    diploma_date = StringField("Дата выдачи диплома", validators=[Optional()])
-    diploma_lastname = StringField("Фамилия в дипломе", validators=[Optional()])
+    institute_name = StringField("Наименование учебного заведения", validators=[DataRequired(message="Укажите учебное заведение"), Length(max=500)])
+    diploma_seriesnumber = StringField("Серия и номер диплома", validators=[Optional(), Length(max=100)])
+    diploma_date = DateField("Дата выдачи диплома", format=["%Y-%m-%d", "%d.%m.%Y"], validators=[Optional()])
+    diploma_lastname = StringField("Фамилия в дипломе", validators=[Optional(), Length(max=100)])
 
     def validate_diploma_seriesnumber(self, field):
-        if self.education.data != "Неоконченное высшее (студент)":
+        if self.education.data in ("Высшее образование", "Среднее профессиональное"):
             if not field.data or not field.data.strip():
                 raise ValidationError("Укажите серию и номер диплома")
 
     def validate_diploma_date(self, field):
-        if self.education.data != "Неоконченное высшее (студент)":
-            if not field.data or not field.data.strip():
+        if self.education.data in ("Высшее образование", "Среднее профессиональное"):
+            if not field.data:
                 raise ValidationError("Укажите дату выдачи диплома")
 
     def validate_diploma_lastname(self, field):
-        if self.education.data != "Неоконченное высшее (студент)":
+        if self.education.data in ("Высшее образование", "Среднее профессиональное"):
             if not field.data or not field.data.strip():
                 raise ValidationError("Укажите фамилию в дипломе")
 
@@ -122,14 +136,14 @@ class StudentForm(FlaskForm):
         choices=FIRE_DOCUMENT_CHOICES,
         validators=[Optional()]
     )
-    fire_institution = StringField("Образовательное учреждение, выдавшее документ", validators=[Optional()])
-    fire_series = StringField("Серия документа", validators=[Optional()])
-    fire_number = StringField("Номер документа", validators=[Optional()])
-    fire_date = StringField("Дата выдачи документа", validators=[Optional()])
+    fire_institution = StringField("Образовательное учреждение, выдавшее документ", validators=[Optional(), Length(max=500)])
+    fire_series = StringField("Серия документа", validators=[Optional(), Length(max=50)])
+    fire_number = StringField("Номер документа", validators=[Optional(), Length(max=50)])
+    fire_date = StringField("Дата выдачи документа", validators=[Optional(), Length(max=50)])
 
     snils = StringField("СНИЛС", validators=[DataRequired(message="Укажите СНИЛС"), validate_snils])
-    student_telephone = StringField("Телефон слушателя", validators=[DataRequired(message="Укажите телефон"), validate_phone])
-    student_email = StringField("Электронная почта слушателя", validators=[DataRequired(message="Укажите email"), Email(message="Неверный формат email")])
+    student_telephone = StringField("Телефон слушателя", validators=[DataRequired(message="Укажите телефон"), validate_phone, Length(max=50)])
+    student_email = StringField("Электронная почта слушателя", validators=[DataRequired(message="Укажите email"), Email(message="Неверный формат email"), Length(max=100)])
 
     # Способ получения удостоверения
     diploma_delivery = SelectField(
@@ -141,7 +155,7 @@ class StudentForm(FlaskForm):
         default="personal",
         validators=[DataRequired()]
     )
-    delivery_address = StringField("Адрес почтовой доставки", validators=[Optional()])
+    delivery_address = StringField("Адрес почтовой доставки", validators=[Optional(), Length(max=500)])
 
     # Категории обучения слушателя
     student_categories = FieldList(FormField(CategoryForm), min_entries=1)
@@ -149,33 +163,33 @@ class StudentForm(FlaskForm):
 
 class ApplicationForm(FlaskForm):
     # Данные организации
-    organization_full_name = StringField("Полное наименование организации", validators=[DataRequired(message="Укажите полное наименование организации")])
-    organization_short_name = StringField("Краткое наименование организации", validators=[DataRequired(message="Укажите краткое наименование")])
+    organization_full_name = StringField("Полное наименование организации", validators=[DataRequired(message="Укажите полное наименование организации"), Length(max=500)])
+    organization_short_name = StringField("Краткое наименование организации", validators=[DataRequired(message="Укажите краткое наименование"), Length(max=255)])
 
-    inn = StringField("ИНН", validators=[DataRequired(message="Укажите ИНН"), validate_inn])
-    kpp = StringField("КПП", validators=[Optional(), validate_kpp])
-    ogrn = StringField("ОГРН / ОГРНИП", validators=[DataRequired(message="Укажите ОГРН"), validate_ogrn])
+    inn = StringField("ИНН", validators=[DataRequired(message="Укажите ИНН"), validate_inn, Length(max=20)])
+    kpp = StringField("КПП", validators=[Optional(), validate_kpp, Length(max=20)])
+    ogrn = StringField("ОГРН / ОГРНИП", validators=[DataRequired(message="Укажите ОГРН"), validate_ogrn, Length(max=20)])
 
-    bank_name = StringField("Наименование банка", validators=[DataRequired(message="Укажите банк")])
-    bik = StringField("БИК", validators=[DataRequired(message="Укажите БИК")])
-    rasch_schot = StringField("Расчетный счет", validators=[DataRequired(message="Укажите расчетный счет")])
+    bank_name = StringField("Наименование банка", validators=[DataRequired(message="Укажите банк"), Length(max=255)])
+    bik = StringField("БИК", validators=[DataRequired(message="Укажите БИК"), validate_bik, Length(max=20)])
+    rasch_schot = StringField("Расчетный счет", validators=[DataRequired(message="Укажите расчетный счет"), validate_account_number, Length(max=30)])
 
-    boss_lastname = StringField("Фамилия руководителя", validators=[DataRequired(message="Укажите фамилию руководителя"), validate_fio])
-    boss_firstname = StringField("Имя руководителя", validators=[DataRequired(message="Укажите имя руководителя"), validate_fio])
-    boss_patronymic = StringField("Отчество руководителя", validators=[Optional(), validate_fio])
-    doljnost_boss = StringField("Должность руководителя", validators=[DataRequired(message="Укажите должность руководителя")])
-    polnamochia_boss = StringField("Действует на основании", default="Устава", validators=[DataRequired(message="Укажите основание полномочий")])
+    boss_lastname = StringField("Фамилия руководителя", validators=[DataRequired(message="Укажите фамилию руководителя"), validate_fio, Length(max=100)])
+    boss_firstname = StringField("Имя руководителя", validators=[DataRequired(message="Укажите имя руководителя"), validate_fio, Length(max=100)])
+    boss_patronymic = StringField("Отчество руководителя", validators=[Optional(), validate_fio, Length(max=100)])
+    doljnost_boss = StringField("Должность руководителя", validators=[DataRequired(message="Укажите должность руководителя"), Length(max=255)])
+    polnamochia_boss = StringField("Действует на основании", default="Устава", validators=[DataRequired(message="Укажите основание полномочий"), Length(max=255)])
 
-    yur_address = StringField("Юридический адрес", validators=[DataRequired(message="Укажите юридический адрес")])
-    fakt_address = StringField("Фактический адрес", validators=[DataRequired(message="Укажите фактический адрес")])
+    yur_address = StringField("Юридический адрес", validators=[DataRequired(message="Укажите юридический адрес"), Length(max=500)])
+    fakt_address = StringField("Фактический адрес", validators=[DataRequired(message="Укажите фактический адрес"), Length(max=500)])
 
-    telephone = StringField("Телефон организации", validators=[DataRequired(message="Укажите телефон организации"), validate_phone])
-    email = StringField("Email организации", validators=[DataRequired(message="Укажите email"), Email(message="Неверный email")])
+    telephone = StringField("Телефон организации", validators=[DataRequired(message="Укажите телефон организации"), validate_phone, Length(max=50)])
+    email = StringField("Email организации", validators=[DataRequired(message="Укажите email"), Email(message="Неверный email"), Length(max=100)])
 
     # Исполнитель (составитель заявки)
-    fio_executor = StringField("ФИО исполнителя", validators=[DataRequired(message="Укажите ФИО исполнителя")])
-    doljnost_executor = StringField("Должность исполнителя", validators=[DataRequired(message="Укажите должность исполнителя")])
-    telephone_executor = StringField("Телефон исполнителя", validators=[DataRequired(message="Укажите телефон исполнителя"), validate_phone])
+    fio_executor = StringField("ФИО исполнителя", validators=[DataRequired(message="Укажите ФИО исполнителя"), Length(max=255)])
+    doljnost_executor = StringField("Должность исполнителя", validators=[DataRequired(message="Укажите должность исполнителя"), Length(max=255)])
+    telephone_executor = StringField("Телефон исполнителя", validators=[DataRequired(message="Укажите телефон исполнителя"), validate_phone, Length(max=50)])
 
     # Список слушателей
     students = FieldList(FormField(StudentForm), min_entries=1)

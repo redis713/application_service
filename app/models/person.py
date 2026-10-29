@@ -27,7 +27,7 @@ class Person(db.Model):
     education_level = db.Column(db.String(100), nullable=False)  # Высшее, СПО и т.д.
     institute_name = db.Column(db.String(500), nullable=False)
     diploma_series_number = db.Column(db.String(100), nullable=True)
-    diploma_date = db.Column(db.String(50), nullable=True)
+    diploma_date = db.Column(db.Date, nullable=True)
     diploma_lastname = db.Column(db.String(100), nullable=True)  # Фамилия в дипломе
 
     # Поля пожарной безопасности (заполняются только при обучении на ПБ)

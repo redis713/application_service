@@ -40,8 +40,41 @@ PROGRAMS_DATA = [
     {"code": "specialist_go", "title": "ДПП профессиональной переподготовки «Специалист по гражданской обороне» (250 часов)", "hours": 250, "direction": "specialist", "study_form": "ochno"},
 ]
 
+def ensure_schema_updates():
+    """Проверяет и обновляет схему таблиц при необходимости (например, diploma_date -> DATE)."""
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        if "persons" in inspector.get_table_names():
+            columns = {col["name"].lower(): str(col["type"]).upper() for col in inspector.get_columns("persons")}
+            col_type = columns.get("diploma_date", "")
+            if "VARCHAR" in col_type or "CHAR" in col_type:
+                # Чистим некорректные даты перед ALTER TABLE
+                rows = db.session.execute(db.text("SELECT id, diploma_date FROM persons WHERE diploma_date IS NOT NULL")).fetchall()
+                from datetime import datetime
+                for r_id, d_val in rows:
+                    valid_date = None
+                    if d_val:
+                        for fmt in ("%Y-%m-%d", "%d.%m.%Y"):
+                            try:
+                                valid_date = datetime.strptime(str(d_val).strip(), fmt).date()
+                                break
+                            except ValueError:
+                                pass
+                    db.session.execute(
+                        db.text("UPDATE persons SET diploma_date = :d WHERE id = :id"),
+                        {"d": valid_date, "id": r_id}
+                    )
+                db.session.commit()
+                db.session.execute(db.text("ALTER TABLE persons MODIFY COLUMN diploma_date DATE NULL"))
+                db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+
 def seed_programs():
     """Заполняет или обновляет базу данных утвержденными программами обучения."""
+    ensure_schema_updates()
     # Удаляем устаревшие программы-заглушки, если они присутствуют
     Program.query.filter(Program.code.in_(["distance_cat1", "distance_cat2", "distance_cat3"])).delete(synchronize_session=False)
 
