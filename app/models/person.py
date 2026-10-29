@@ -35,7 +35,7 @@ class Person(db.Model):
     fire_institution = db.Column(db.String(500), nullable=True)
     fire_series = db.Column(db.String(50), nullable=True)
     fire_number = db.Column(db.String(50), nullable=True)
-    fire_date = db.Column(db.String(50), nullable=True)
+    fire_date = db.Column(db.Date, nullable=True)
 
     created_at = db.Column(db.DateTime, default=utc_now)
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)

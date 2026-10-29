@@ -21,17 +21,45 @@ class Application(db.Model):
     # Секретный токен для безопасного доступа заявителя без логина (прикрепить скан, проверить статус)
     secret_token = db.Column(db.String(64), unique=True, nullable=False, default=generate_secret_token, index=True)
 
-    organization_id = db.Column(db.Integer, db.ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
-
     direction = db.Column(db.String(50), nullable=False, default=TrainingDirection.GOCHS.value)
     study_form = db.Column(db.String(50), nullable=False, default=StudyForm.DISTANT.value)
 
     status = db.Column(db.String(50), nullable=False, default=ApplicationStatus.DRAFT.value, index=True)
 
-    # Временные метки
+    # Данные организации (хранятся непосредственно в заявке)
+    org_full_name = db.Column(db.String(500), nullable=False)
+    org_short_name = db.Column(db.String(255), nullable=False)
+    inn = db.Column(db.String(12), nullable=False, index=True)
+    kpp = db.Column(db.String(9), nullable=True)
+    ogrn = db.Column(db.String(15), nullable=False, index=True)
+    bank_name = db.Column(db.String(255), nullable=False)
+    bik = db.Column(db.String(9), nullable=False)
+    account_number = db.Column(db.String(30), nullable=False)
+
+    # Руководство организации
+    boss_lastname = db.Column(db.String(100), nullable=False)
+    boss_firstname = db.Column(db.String(100), nullable=False)
+    boss_patronymic = db.Column(db.String(100), nullable=True)
+    boss_position = db.Column(db.String(255), nullable=False)
+    boss_authority = db.Column(db.String(255), nullable=False)
+
+    # Адреса и контакты организации
+    legal_address = db.Column(db.String(500), nullable=False)
+    actual_address = db.Column(db.String(500), nullable=False)
+    phone = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+
+    # Ответственный исполнитель (контактное лицо)
+    executor_fio = db.Column(db.String(255), nullable=False)
+    executor_position = db.Column(db.String(255), nullable=False)
+    executor_phone = db.Column(db.String(50), nullable=False)
+    executor_email = db.Column(db.String(100), nullable=True)
+
+    # Временные метки и аудит
     created_at = db.Column(db.DateTime, default=utc_now)
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     submitted_at = db.Column(db.DateTime, nullable=True)  # Момент загрузки подписанного скана
+    last_edited_by = db.Column(db.String(100), nullable=True)  # "пользователь" или метка сотрудника
 
     # Подписанный скан документа
     signed_scan_filename = db.Column(db.String(255), nullable=True)
@@ -41,9 +69,26 @@ class Application(db.Model):
     notes = db.Column(db.Text, nullable=True)
 
     # Связи
-    organization = db.relationship("Organization", back_populates="applications")
     listeners = db.relationship("ApplicationListener", back_populates="application", cascade="all, delete-orphan")
     attachments = db.relationship("ApplicationAttachment", back_populates="application", cascade="all, delete-orphan")
+
+    @property
+    def boss_full_name(self) -> str:
+        parts = [self.boss_lastname, self.boss_firstname, self.boss_patronymic]
+        return " ".join(p for p in parts if p)
+
+    @property
+    def full_name(self) -> str:
+        return self.org_full_name
+
+    @property
+    def short_name(self) -> str:
+        return self.org_short_name
+
+    @property
+    def organization(self):
+        """Свойство совместимости: возвращает саму заявку с реквизитами организации."""
+        return self
 
     @property
     def status_label(self) -> str:
@@ -58,7 +103,7 @@ class Application(db.Model):
         return StudyForm.label(self.study_form)
 
     def __repr__(self):
-        return f"<Application {self.app_number} [{self.status}]: Org {self.organization_id}>"
+        return f"<Application {self.app_number} [{self.status}]: {self.org_short_name}>"
 
 
 class ApplicationListener(db.Model):

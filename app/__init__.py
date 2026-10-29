@@ -27,7 +27,6 @@ def create_app(config_class=Config):
     with flask_app.app_context():
         # Импортируем модели для регистрации в SQLAlchemy
         from app.models import (
-            Organization,
             Person,
             Program,
             Application,

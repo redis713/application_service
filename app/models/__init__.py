@@ -1,4 +1,3 @@
-from app.models.organization import Organization
 from app.models.person import Person
 from app.models.program import Program
 from app.models.application import (
@@ -9,7 +8,6 @@ from app.models.application import (
 )
 
 __all__ = [
-    "Organization",
     "Person",
     "Program",
     "Application",

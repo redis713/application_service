@@ -6,7 +6,6 @@ from typing import Dict, Any, List, Optional
 from werkzeug.utils import secure_filename
 from app.extensions import db
 from app.constants import ApplicationStatus, StudyForm, TrainingDirection
-from app.models.organization import Organization
 from app.models.person import Person
 from app.models.program import Program
 from app.models.application import (
@@ -60,61 +59,6 @@ class ApplicationService:
         return candidate
 
     @classmethod
-    def save_or_update_organization(cls, org_data: Dict[str, Any]) -> Organization:
-        """Находит существующую организацию по ИНН/ОГРН или создает новую."""
-        inn = cls.clean_digits(org_data.get("inn"))
-        ogrn = cls.clean_digits(org_data.get("ogrn"))
-
-        org = Organization.query.filter(
-            (Organization.inn == inn) | (Organization.ogrn == ogrn)
-        ).first()
-
-        _s = cls._s
-        if not org:
-            org = Organization(
-                full_name=_s(org_data.get("organization_full_name")),
-                short_name=_s(org_data.get("organization_short_name")),
-                inn=inn,
-                kpp=cls.clean_digits(org_data.get("kpp")),
-                ogrn=ogrn,
-                bank_name=_s(org_data.get("bank_name")),
-                bik=cls.clean_digits(org_data.get("bik")),
-                account_number=cls.clean_digits(org_data.get("rasch_schot")),
-                boss_lastname=_s(org_data.get("boss_lastname")),
-                boss_firstname=_s(org_data.get("boss_firstname")),
-                boss_patronymic=_s(org_data.get("boss_patronymic")) or None,
-                boss_position=_s(org_data.get("doljnost_boss")),
-                boss_authority=_s(org_data.get("polnamochia_boss")),
-                legal_address=_s(org_data.get("yur_address")),
-                actual_address=_s(org_data.get("fakt_address")),
-                phone=_s(org_data.get("telephone")),
-                email=_s(org_data.get("email")),
-                executor_fio=_s(org_data.get("fio_executor")),
-                executor_position=_s(org_data.get("doljnost_executor")),
-                executor_phone=_s(org_data.get("telephone_executor")),
-                executor_email=_s(org_data.get("email"))
-            )
-            db.session.add(org)
-        else:
-            # Обновляем реквизиты и контактные данные
-            org.full_name = _s(org_data.get("organization_full_name")) or org.full_name
-            org.short_name = _s(org_data.get("organization_short_name")) or org.short_name
-            org.bank_name = _s(org_data.get("bank_name")) or org.bank_name
-            org.bik = cls.clean_digits(org_data.get("bik")) or org.bik
-            org.account_number = cls.clean_digits(org_data.get("rasch_schot")) or org.account_number
-            org.boss_position = _s(org_data.get("doljnost_boss")) or org.boss_position
-            org.boss_authority = _s(org_data.get("polnamochia_boss")) or org.boss_authority
-            org.actual_address = _s(org_data.get("fakt_address")) or org.actual_address
-            org.phone = _s(org_data.get("telephone")) or org.phone
-            org.email = _s(org_data.get("email")) or org.email
-            org.executor_fio = _s(org_data.get("fio_executor")) or org.executor_fio
-            org.executor_position = _s(org_data.get("doljnost_executor")) or org.executor_position
-            org.executor_phone = _s(org_data.get("telephone_executor")) or org.executor_phone
-
-        db.session.flush()
-        return org
-
-    @classmethod
     def save_or_update_person(cls, student_data: Dict[str, Any]) -> Person:
         """Находит гражданина по СНИЛС или создает нового."""
         _s = cls._s
@@ -146,6 +90,19 @@ class ApplicationService:
         elif not raw_diploma:
             diploma_date = None
 
+        raw_fire = student_data.get("fire_date")
+        fire_date = raw_fire
+        if isinstance(raw_fire, str) and raw_fire.strip():
+            fire_date = None
+            for fmt in ("%Y-%m-%d", "%d.%m.%Y"):
+                try:
+                    fire_date = datetime.strptime(raw_fire.strip(), fmt).date()
+                    break
+                except ValueError:
+                    pass
+        elif not raw_fire:
+            fire_date = None
+
         if not person:
             person = Person(
                 snils=clean_snils,
@@ -165,7 +122,7 @@ class ApplicationService:
                 fire_institution=_s(student_data.get("fire_institution")) or None,
                 fire_series=_s(student_data.get("fire_series")) or None,
                 fire_number=_s(student_data.get("fire_number")) or None,
-                fire_date=_s(student_data.get("fire_date")) or None
+                fire_date=fire_date
             )
             db.session.add(person)
         else:
@@ -185,7 +142,7 @@ class ApplicationService:
                 person.fire_institution = _s(student_data.get("fire_institution")) or None
                 person.fire_series = _s(student_data.get("fire_series")) or None
                 person.fire_number = _s(student_data.get("fire_number")) or None
-                person.fire_date = _s(student_data.get("fire_date")) or None
+                person.fire_date = fire_date
 
         db.session.flush()
         return person
@@ -246,26 +203,46 @@ class ApplicationService:
     ) -> Application:
         """
         Создает черновик заявки со всеми слушателями и программами в базе данных.
+        Реквизиты организации сохраняются непосредственно внутри самой заявки.
         Возвращает объект Application с уникальным app_number и secret_token.
         """
         try:
-            # 1. Организация
-            org = cls.save_or_update_organization(org_data)
-
-            # 2. Номер заявки
             app_number = cls.generate_app_number(direction)
+            _s = cls._s
 
             application = Application(
                 app_number=app_number,
-                organization=org,
                 direction=direction,
                 study_form=study_form,
-                status=ApplicationStatus.DRAFT.value
+                status=ApplicationStatus.DRAFT.value,
+                # Данные организации в заявке
+                org_full_name=_s(org_data.get("organization_full_name")),
+                org_short_name=_s(org_data.get("organization_short_name")),
+                inn=cls.clean_digits(org_data.get("inn")),
+                kpp=cls.clean_digits(org_data.get("kpp")),
+                ogrn=cls.clean_digits(org_data.get("ogrn")),
+                bank_name=_s(org_data.get("bank_name")),
+                bik=cls.clean_digits(org_data.get("bik")),
+                account_number=cls.clean_digits(org_data.get("rasch_schot")),
+                boss_lastname=_s(org_data.get("boss_lastname")),
+                boss_firstname=_s(org_data.get("boss_firstname")),
+                boss_patronymic=_s(org_data.get("boss_patronymic")) or None,
+                boss_position=_s(org_data.get("doljnost_boss")),
+                boss_authority=_s(org_data.get("polnamochia_boss")),
+                legal_address=_s(org_data.get("yur_address")),
+                actual_address=_s(org_data.get("fakt_address")),
+                phone=_s(org_data.get("telephone")),
+                email=_s(org_data.get("email")),
+                executor_fio=_s(org_data.get("fio_executor")),
+                executor_position=_s(org_data.get("doljnost_executor")),
+                executor_phone=_s(org_data.get("telephone_executor")),
+                executor_email=_s(org_data.get("email")),
+                last_edited_by=None
             )
             db.session.add(application)
             db.session.flush()
 
-            # 3. Слушатели и их курсы
+            # Слушатели и их курсы
             cls._save_application_listeners(application, students_data)
 
             db.session.commit()
@@ -284,24 +261,47 @@ class ApplicationService:
         """
         Обновляет существующий черновик заявки (организацию, слушателей, курсы),
         сохраняя тот же номер заявки и секретный токен.
+        Ставит отметку о редактировании пользователем и обновляет timestamp.
         """
         application = Application.query.filter_by(secret_token=token).first()
         if not application:
             raise ValueError("Заявка с указанным токеном не найдена.")
 
         try:
-            # 1. Обновляем организацию
-            cls.save_or_update_organization(org_data)
+            _s = cls._s
+            # Обновляем организацию прямо в заявке
+            application.org_full_name = _s(org_data.get("organization_full_name"))
+            application.org_short_name = _s(org_data.get("organization_short_name"))
+            application.inn = cls.clean_digits(org_data.get("inn"))
+            application.kpp = cls.clean_digits(org_data.get("kpp"))
+            application.ogrn = cls.clean_digits(org_data.get("ogrn"))
+            application.bank_name = _s(org_data.get("bank_name"))
+            application.bik = cls.clean_digits(org_data.get("bik"))
+            application.account_number = cls.clean_digits(org_data.get("rasch_schot"))
+            application.boss_lastname = _s(org_data.get("boss_lastname"))
+            application.boss_firstname = _s(org_data.get("boss_firstname"))
+            application.boss_patronymic = _s(org_data.get("boss_patronymic")) or None
+            application.boss_position = _s(org_data.get("doljnost_boss"))
+            application.boss_authority = _s(org_data.get("polnamochia_boss"))
+            application.legal_address = _s(org_data.get("yur_address"))
+            application.actual_address = _s(org_data.get("fakt_address"))
+            application.phone = _s(org_data.get("telephone"))
+            application.email = _s(org_data.get("email"))
+            application.executor_fio = _s(org_data.get("fio_executor"))
+            application.executor_position = _s(org_data.get("doljnost_executor"))
+            application.executor_phone = _s(org_data.get("telephone_executor"))
+            application.executor_email = _s(org_data.get("email"))
+            application.last_edited_by = "пользователь"
+            application.updated_at = datetime.now(timezone.utc)
 
-            # 2. Удаляем старых слушателей (курсы удалятся каскадно)
+            # Удаляем старых слушателей (курсы удалятся каскадно)
             for old_listener in list(application.listeners):
                 db.session.delete(old_listener)
             db.session.flush()
 
-            # 3. Добавляем обновленный список слушателей и их курсов
+            # Добавляем обновленный список слушателей и их курсов
             cls._save_application_listeners(application, students_data)
 
-            application.updated_at = datetime.now(timezone.utc)
             db.session.commit()
             return application
         except Exception:
@@ -311,7 +311,6 @@ class ApplicationService:
     @classmethod
     def get_application_form_data(cls, application: Application) -> Dict[str, Any]:
         """Формирует словарь начальных данных для предзаполнения формы редактирования."""
-        org = application.organization
         students = []
         for l in application.listeners:
             p = l.person
@@ -351,26 +350,26 @@ class ApplicationService:
             })
 
         return {
-            "organization_full_name": org.full_name,
-            "organization_short_name": org.short_name,
-            "inn": org.inn,
-            "kpp": org.kpp or "",
-            "ogrn": org.ogrn,
-            "bank_name": org.bank_name,
-            "bik": org.bik,
-            "rasch_schot": org.account_number,
-            "boss_lastname": org.boss_lastname,
-            "boss_firstname": org.boss_firstname,
-            "boss_patronymic": org.boss_patronymic or "",
-            "doljnost_boss": org.boss_position,
-            "polnamochia_boss": org.boss_authority,
-            "yur_address": org.legal_address,
-            "fakt_address": org.actual_address,
-            "telephone": org.phone,
-            "email": org.email,
-            "fio_executor": org.executor_fio,
-            "doljnost_executor": org.executor_position,
-            "telephone_executor": org.executor_phone,
+            "organization_full_name": application.org_full_name,
+            "organization_short_name": application.org_short_name,
+            "inn": application.inn,
+            "kpp": application.kpp or "",
+            "ogrn": application.ogrn,
+            "bank_name": application.bank_name,
+            "bik": application.bik,
+            "rasch_schot": application.account_number,
+            "boss_lastname": application.boss_lastname,
+            "boss_firstname": application.boss_firstname,
+            "boss_patronymic": application.boss_patronymic or "",
+            "doljnost_boss": application.boss_position,
+            "polnamochia_boss": application.boss_authority,
+            "yur_address": application.legal_address,
+            "fakt_address": application.actual_address,
+            "telephone": application.phone,
+            "email": application.email,
+            "fio_executor": application.executor_fio,
+            "doljnost_executor": application.executor_position,
+            "telephone_executor": application.executor_phone,
             "students": students,
         }
 

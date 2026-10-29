@@ -92,19 +92,24 @@ class DocxService:
                     f"СНИЛС: {snils}"
                 )
             else:
+                edu_parts = [edu_level]
+                if institute:
+                    edu_parts.append(institute)
                 edu_dip_parts = []
                 if diploma_num:
-                    edu_dip_parts.append(str(diploma_num))
+                    edu_dip_parts.append(f"диплом: {diploma_num}")
                 if diploma_date:
-                    edu_dip_parts.append(diploma_date)
-                edu_dip_str = f" {', '.join(edu_dip_parts)}" if edu_dip_parts else ""
-                dip_last_str = f"\n\nФамилия в дипломе: {diploma_lastname}" if diploma_lastname else ""
-                edu_cell = (
-                    f"{edu_level}\n\n"
-                    f"{institute}{edu_dip_str}"
-                    f"{dip_last_str}\n\n"
-                    f"СНИЛС: {snils}"
-                )
+                    edu_dip_parts.append(f"выдан {diploma_date}")
+                if edu_dip_parts:
+                    edu_parts.append(", ".join(edu_dip_parts))
+
+                # Фамилия в дипломе (при заполнении или фамилия слушателя по умолчанию)
+                dip_lastname = diploma_lastname or item.get("lastname") or item.get("student_lastname") or ""
+                if dip_lastname:
+                    edu_parts.append(f"Фамилия в дипломе: {dip_lastname}")
+                if snils:
+                    edu_parts.append(f"СНИЛС: {snils}")
+                edu_cell = "\n\n".join(edu_parts)
 
             # Формирование сведений о пожарном образовании для соответствующих бланков
             fire_doc_type = item.get("fire_safety_document_type")

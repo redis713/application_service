@@ -41,32 +41,111 @@ PROGRAMS_DATA = [
 ]
 
 def ensure_schema_updates():
-    """Проверяет и обновляет схему таблиц при необходимости (например, diploma_date -> DATE)."""
+    """Проверяет и обновляет схему таблиц при необходимости (миграция организации в заявку, даты в DATE)."""
     try:
         from sqlalchemy import inspect
         inspector = inspect(db.engine)
-        if "persons" in inspector.get_table_names():
+        table_names = inspector.get_table_names()
+
+        # 1. Обновление дат в таблице persons (diploma_date, fire_date -> DATE)
+        if "persons" in table_names:
             columns = {col["name"].lower(): str(col["type"]).upper() for col in inspector.get_columns("persons")}
-            col_type = columns.get("diploma_date", "")
-            if "VARCHAR" in col_type or "CHAR" in col_type:
-                # Чистим некорректные даты перед ALTER TABLE
-                rows = db.session.execute(db.text("SELECT id, diploma_date FROM persons WHERE diploma_date IS NOT NULL")).fetchall()
-                from datetime import datetime
-                for r_id, d_val in rows:
-                    valid_date = None
-                    if d_val:
-                        for fmt in ("%Y-%m-%d", "%d.%m.%Y"):
-                            try:
-                                valid_date = datetime.strptime(str(d_val).strip(), fmt).date()
-                                break
-                            except ValueError:
-                                pass
-                    db.session.execute(
-                        db.text("UPDATE persons SET diploma_date = :d WHERE id = :id"),
-                        {"d": valid_date, "id": r_id}
-                    )
+            from datetime import datetime
+
+            for date_col in ("diploma_date", "fire_date"):
+                col_type = columns.get(date_col, "")
+                if "VARCHAR" in col_type or "CHAR" in col_type:
+                    rows = db.session.execute(db.text(f"SELECT id, {date_col} FROM persons WHERE {date_col} IS NOT NULL")).fetchall()
+                    for r_id, d_val in rows:
+                        valid_date = None
+                        if d_val:
+                            for fmt in ("%Y-%m-%d", "%d.%m.%Y"):
+                                try:
+                                    valid_date = datetime.strptime(str(d_val).strip(), fmt).date()
+                                    break
+                                except ValueError:
+                                    pass
+                        db.session.execute(
+                            db.text(f"UPDATE persons SET {date_col} = :d WHERE id = :id"),
+                            {"d": valid_date, "id": r_id}
+                        )
+                    db.session.commit()
+                    db.session.execute(db.text(f"ALTER TABLE persons MODIFY COLUMN {date_col} DATE NULL"))
+                    db.session.commit()
+
+        # 2. Перенос данных организации непосредственно в таблицу applications
+        if "applications" in table_names:
+            app_cols = [c["name"].lower() for c in inspector.get_columns("applications")]
+            if "org_full_name" not in app_cols:
+                cols_to_add = [
+                    "org_full_name VARCHAR(500) NULL",
+                    "org_short_name VARCHAR(255) NULL",
+                    "inn VARCHAR(12) NULL",
+                    "kpp VARCHAR(9) NULL",
+                    "ogrn VARCHAR(15) NULL",
+                    "bank_name VARCHAR(255) NULL",
+                    "bik VARCHAR(9) NULL",
+                    "account_number VARCHAR(30) NULL",
+                    "boss_lastname VARCHAR(100) NULL",
+                    "boss_firstname VARCHAR(100) NULL",
+                    "boss_patronymic VARCHAR(100) NULL",
+                    "boss_position VARCHAR(255) NULL",
+                    "boss_authority VARCHAR(255) NULL",
+                    "legal_address VARCHAR(500) NULL",
+                    "actual_address VARCHAR(500) NULL",
+                    "phone VARCHAR(50) NULL",
+                    "email VARCHAR(100) NULL",
+                    "executor_fio VARCHAR(255) NULL",
+                    "executor_position VARCHAR(255) NULL",
+                    "executor_phone VARCHAR(50) NULL",
+                    "executor_email VARCHAR(100) NULL",
+                    "last_edited_by VARCHAR(100) NULL",
+                ]
+                for col_def in cols_to_add:
+                    db.session.execute(db.text(f"ALTER TABLE applications ADD COLUMN {col_def}"))
                 db.session.commit()
-                db.session.execute(db.text("ALTER TABLE persons MODIFY COLUMN diploma_date DATE NULL"))
+
+            if "organizations" in table_names and "organization_id" in app_cols:
+                copy_sql = """
+                    UPDATE applications a
+                    JOIN organizations o ON a.organization_id = o.id
+                    SET a.org_full_name = o.full_name,
+                        a.org_short_name = o.short_name,
+                        a.inn = o.inn,
+                        a.kpp = o.kpp,
+                        a.ogrn = o.ogrn,
+                        a.bank_name = o.bank_name,
+                        a.bik = o.bik,
+                        a.account_number = o.account_number,
+                        a.boss_lastname = o.boss_lastname,
+                        a.boss_firstname = o.boss_firstname,
+                        a.boss_patronymic = o.boss_patronymic,
+                        a.boss_position = o.boss_position,
+                        a.boss_authority = o.boss_authority,
+                        a.legal_address = o.legal_address,
+                        a.actual_address = o.actual_address,
+                        a.phone = o.phone,
+                        a.email = o.email,
+                        a.executor_fio = o.executor_fio,
+                        a.executor_position = o.executor_position,
+                        a.executor_phone = o.executor_phone,
+                        a.executor_email = o.executor_email
+                """
+                db.session.execute(db.text(copy_sql))
+                db.session.commit()
+
+                # Удаление внешних ключей на organization_id
+                for fk in inspector.get_foreign_keys("applications"):
+                    if "organization_id" in fk.get("constrained_columns", []):
+                        db.session.execute(db.text(f"ALTER TABLE applications DROP FOREIGN KEY {fk['name']}"))
+                        db.session.commit()
+
+                # Удаление колонки organization_id
+                db.session.execute(db.text("ALTER TABLE applications DROP COLUMN organization_id"))
+                db.session.commit()
+
+                # Удаление старой таблицы organizations
+                db.session.execute(db.text("DROP TABLE organizations"))
                 db.session.commit()
     except Exception:
         db.session.rollback()

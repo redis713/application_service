@@ -13,11 +13,11 @@ from wtforms import (
 from wtforms.validators import DataRequired, Email, Optional, ValidationError, Length
 from app.constants import FIRE_DOCUMENT_CHOICES
 
-NAME_REGEX = r"^[А-ЯЁ][а-яё]+(?:[- ][А-ЯЁ][а-яё]+)*$"
+NAME_REGEX = r"^[А-ЯЁ][а-яёА-ЯЁ'’`]*(?:[- ][а-яёА-ЯЁ'’`]+)*$"
 
 def validate_fio(form, field):
     if field.data and not re.match(NAME_REGEX, field.data.strip()):
-        raise ValidationError("Должно начинаться с заглавной буквы и содержать только русские буквы, пробелы или тире.")
+        raise ValidationError("Должно начинаться с заглавной русской буквы и содержать только русские буквы, пробелы или дефис.")
 
 def validate_inn(form, field):
     if field.data:
@@ -139,7 +139,7 @@ class StudentForm(FlaskForm):
     fire_institution = StringField("Образовательное учреждение, выдавшее документ", validators=[Optional(), Length(max=500)])
     fire_series = StringField("Серия документа", validators=[Optional(), Length(max=50)])
     fire_number = StringField("Номер документа", validators=[Optional(), Length(max=50)])
-    fire_date = StringField("Дата выдачи документа", validators=[Optional(), Length(max=50)])
+    fire_date = DateField("Дата выдачи документа", format=["%Y-%m-%d", "%d.%m.%Y"], validators=[Optional()])
 
     snils = StringField("СНИЛС", validators=[DataRequired(message="Укажите СНИЛС"), validate_snils])
     student_telephone = StringField("Телефон слушателя", validators=[DataRequired(message="Укажите телефон"), validate_phone, Length(max=50)])

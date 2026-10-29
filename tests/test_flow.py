@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from datetime import date
 from app import create_app
-from app.models import Application, Organization, Person
+from app.models import Application, Person
 from app.services.docx_service import DocxService
 from app.services.application_service import ApplicationService
 

@@ -181,7 +181,7 @@ def form_view(study_form: str, direction: str):
                 if not s_form.fire_number.data or not s_form.fire_number.data.strip():
                     add_field_error(s_form.fire_number, "Укажите номер документа.")
                     is_valid = False
-                if not s_form.fire_date.data or not s_form.fire_date.data.strip():
+                if not s_form.fire_date.data:
                     add_field_error(s_form.fire_date, "Укажите дату выдачи документа.")
                     is_valid = False
 
@@ -263,7 +263,7 @@ def edit_view(token: str):
                 if not s_form.fire_number.data or not s_form.fire_number.data.strip():
                     add_field_error(s_form.fire_number, "Укажите номер документа.")
                     is_valid = False
-                if not s_form.fire_date.data or not s_form.fire_date.data.strip():
+                if not s_form.fire_date.data:
                     add_field_error(s_form.fire_date, "Укажите дату выдачи документа.")
                     is_valid = False
 
@@ -339,30 +339,29 @@ def status_view(token: str):
 def download_docx(token: str):
     application = Application.query.filter_by(secret_token=token).first_or_404()
 
-    # Собираем данные организации из модели
-    org = application.organization
+    # Собираем данные организации из заявки
     org_data = {
-        "full_name": org.full_name,
-        "short_name": org.short_name,
-        "boss_lastname": org.boss_lastname,
-        "boss_firstname": org.boss_firstname,
-        "boss_patronymic": org.boss_patronymic,
-        "boss_position": org.boss_position,
-        "boss_authority": org.boss_authority,
-        "ogrn": org.ogrn,
-        "inn": org.inn,
-        "kpp": org.kpp or "",
-        "bank_name": org.bank_name,
-        "account_number": org.account_number,
-        "bik": org.bik,
-        "actual_address": org.actual_address,
-        "legal_address": org.legal_address,
-        "phone": org.phone,
-        "email": org.email,
-        "executor_fio": org.executor_fio,
-        "executor_position": org.executor_position,
-        "executor_phone": org.executor_phone,
-        "executor_email": org.executor_email,
+        "full_name": application.org_full_name,
+        "short_name": application.org_short_name,
+        "boss_lastname": application.boss_lastname,
+        "boss_firstname": application.boss_firstname,
+        "boss_patronymic": application.boss_patronymic,
+        "boss_position": application.boss_position,
+        "boss_authority": application.boss_authority,
+        "ogrn": application.ogrn,
+        "inn": application.inn,
+        "kpp": application.kpp or "",
+        "bank_name": application.bank_name,
+        "account_number": application.account_number,
+        "bik": application.bik,
+        "actual_address": application.actual_address,
+        "legal_address": application.legal_address,
+        "phone": application.phone,
+        "email": application.email,
+        "executor_fio": application.executor_fio,
+        "executor_position": application.executor_position,
+        "executor_phone": application.executor_phone,
+        "executor_email": application.executor_email,
     }
 
     # Собираем данные слушателей
@@ -411,7 +410,7 @@ def download_docx(token: str):
         templates_dir=templates_dir
     )
 
-    clean_org = org.short_name.replace('"', '').replace("'", "").strip()
+    clean_org = application.org_short_name.replace('"', '').replace("'", "").strip()
     download_filename = f"Заявка_{application.app_number}_{clean_org}.docx"
 
     return send_file(
