@@ -31,7 +31,10 @@ class DocxService:
         ]))
         boss_pos = org_data.get("boss_position") or org_data.get("doljnost_boss", "")
         boss_auth = org_data.get("boss_authority") or org_data.get("polnamochia_boss", "")
-        boss_display = f"{boss_fio}, {boss_pos}, действующий(ая) на основании: {boss_auth}".strip(", ")
+        if boss_auth:
+            boss_display = f"{boss_fio}, {boss_pos}, действующий(ая) на основании: {boss_auth}".strip(", ")
+        else:
+            boss_display = f"{boss_fio}, {boss_pos}".strip(", ")
 
         # Реквизиты
         ogrn = org_data.get("ogrn", "")
@@ -41,14 +44,15 @@ class DocxService:
         rs = org_data.get("account_number") or org_data.get("rasch_schot", "")
         bik = org_data.get("bik", "")
 
-        requisites_block = (
-            f"ОГРН: {ogrn}\n"
-            f"ИНН: {inn}\n"
-            f"КПП: {kpp}\n"
-            f"Банк: {bank_name}\n"
-            f"р/с: {rs}\n"
+        req_lines = [f"ОГРН: {ogrn}", f"ИНН: {inn}"]
+        if kpp:
+            req_lines.append(f"КПП: {kpp}")
+        req_lines.extend([
+            f"Банк: {bank_name}",
+            f"р/с: {rs}",
             f"БИК: {bik}"
-        )
+        ])
+        requisites_block = "\n".join(req_lines)
 
         fakt_addr = org_data.get("actual_address") or org_data.get("fakt_address", "")
         yur_addr = org_data.get("legal_address") or org_data.get("yur_address", "")
@@ -215,11 +219,15 @@ class DocxService:
         listeners_data: List[Dict[str, Any]],
         study_form: str = "distant",
         direction: str = "gochs",
-        templates_dir: str = "docx_templates"
+        templates_dir: str = None
     ) -> io.BytesIO:
         """
         Генерирует готовый файл .docx в памяти (io.BytesIO) на основе формы и направления обучения.
         """
+        if not templates_dir:
+            base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+            templates_dir = os.path.join(base_dir, "docx_templates")
+
         template_map = {
             (StudyForm.DISTANT.value, TrainingDirection.GOCHS.value): "gochs-dist.docx",
             (StudyForm.DISTANT.value, TrainingDirection.FIRE.value): "pb-dist.docx",

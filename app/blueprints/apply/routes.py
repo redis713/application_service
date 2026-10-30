@@ -208,6 +208,7 @@ def form_view(study_form: str, direction: str):
                 return redirect(url_for("apply.status_view", token=application.secret_token, download="1"))
 
             except Exception as e:
+                current_app.logger.error(f"Error creating application draft: {e}", exc_info=True)
                 flash(f"Ошибка при сохранении заявки: {str(e)}", "danger")
 
     return render_template(
@@ -227,6 +228,11 @@ def form_view(study_form: str, direction: str):
 def edit_view(token: str):
     """Маршрут редактирования заявки: позволяет вернуться с шага 2 на шаг 1 и скорректировать данные."""
     application = Application.query.filter_by(secret_token=token).first_or_404()
+
+    if application.status in [ApplicationStatus.ACCEPTED.value, ApplicationStatus.REJECTED.value]:
+        flash(f"Заявка № {application.app_number} находится в статусе «{application.status_label}» и недоступна для изменения.", "warning")
+        return redirect(url_for("apply.success_view", token=token))
+
     choices = get_program_choices(application.direction, application.study_form)
 
     # Определяем фиксированную программу (если заявка была создана по одной категории)
@@ -311,6 +317,11 @@ def edit_view(token: str):
 @apply_bp.route("/status/<token>", methods=["GET", "POST"])
 def status_view(token: str):
     application = Application.query.filter_by(secret_token=token).first_or_404()
+
+    # Если скан уже прикреплен и заявка отправлена или одобрена, перенаправляем на карточку успеха
+    if application.status in (ApplicationStatus.SUBMITTED.value, ApplicationStatus.ACCEPTED.value, ApplicationStatus.IN_REVIEW.value):
+        return redirect(url_for("apply.success_view", token=token))
+
     upload_form = ScanUploadForm()
 
     if upload_form.validate_on_submit():
@@ -323,6 +334,7 @@ def status_view(token: str):
             flash("Скан заявления успешно прикреплен! Ваша заявка передана в учебный отдел на обработку.", "success")
             return redirect(url_for("apply.success_view", token=token))
         except Exception as e:
+            current_app.logger.error(f"Error attaching scan for application {token}: {e}", exc_info=True)
             flash(f"Ошибка при загрузке скана: {str(e)}", "danger")
 
     auto_download = request.args.get("download") == "1"
@@ -425,3 +437,28 @@ def download_docx(token: str):
 def success_view(token: str):
     application = Application.query.filter_by(secret_token=token).first_or_404()
     return render_template("apply/success.html", application=application)
+
+
+@apply_bp.route("/scan/<token>")
+def view_scan(token: str):
+    """Позволяет просмотреть или скачать загруженный скан подписанной заявки."""
+    application = Application.query.filter_by(secret_token=token).first_or_404()
+    if not application.signed_scan_path or not os.path.exists(application.signed_scan_path):
+        abort(404)
+
+    ext = application.signed_scan_path.rsplit(".", 1)[-1].lower() if "." in application.signed_scan_path else ""
+    mime_map = {
+        "pdf": "application/pdf",
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "png": "image/png",
+        "tif": "image/tiff",
+        "tiff": "image/tiff",
+    }
+    mimetype = mime_map.get(ext, "application/octet-stream")
+    return send_file(
+        application.signed_scan_path,
+        mimetype=mimetype,
+        as_attachment=False,
+        download_name=application.signed_scan_filename or f"scan_{application.app_number}.{ext}"
+    )

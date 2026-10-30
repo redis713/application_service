@@ -412,9 +412,10 @@
                             {{ student_form.diploma_delivery.label }}
                             {{ student_form.diploma_delivery(class="form-control delivery-select", onchange="toggleDeliveryAddress(this)") }}
                         </div>
-                        <div class="form-group col-2 delivery-address-group" style="display: none;">
+                        <div class="form-group col-2 delivery-address-group {% if student_form.delivery_address.errors %}has-error{% endif %}" {% if student_form.diploma_delivery.data != 'mail' %}style="display: none;"{% endif %}>
                             {{ student_form.delivery_address.label }}
                             {{ student_form.delivery_address(class="form-control", placeholder="Почтовый адрес для отправки удостоверения") }}
+                            {% for err in student_form.delivery_address.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
                     </div>
 

@@ -1,8 +1,11 @@
+import os
 from app import create_app
 
 app = create_app()
 
 if __name__ == "__main__":
-    # По умолчанию запускаем на 127.0.0.1 (локально, мгновенный старт без опроса сетевых адаптеров)
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    host = os.environ.get("FLASK_RUN_HOST", "127.0.0.1")
+    port = int(os.environ.get("FLASK_RUN_PORT", "5000"))
+    debug = os.environ.get("FLASK_DEBUG", "True").lower() in ("true", "1", "yes")
+    app.run(host=host, port=port, debug=debug)
 

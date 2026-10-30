@@ -37,7 +37,7 @@
     <div class="action-card">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
             <div>
-                <span class="badge-status badge-draft">Черновик (требуется скан)</span>
+                <span class="badge-status {% if application.status == 'correction' %}badge-warning{% else %}badge-draft{% endif %}">{{ application.status_label }}</span>
                 <h2 style="margin: 8px 0 4px 0; font-size: 1.8rem;">Заявка {{ application.app_number }}</h2>
                 <p style="margin: 0; color: #64748b; font-size: 0.95rem;">
                     Организация: <strong>{{ application.organization.short_name }}</strong> (ИНН: {{ application.organization.inn }})

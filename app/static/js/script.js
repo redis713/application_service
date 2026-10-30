@@ -1,6 +1,7 @@
-const NAME_REGEX = /^[А-ЯЁ][а-яё]+(?:[- ][А-ЯЁ][а-яё]+)*$/;
-const INN_REGEX = /^\d{10}$/;
-const OGRN_REGEX = /^\d{13}$/;
+// Основная интерактивная логика формы находится в app/templates/apply/form.html
+const NAME_REGEX = /^[А-ЯЁ][а-яёА-ЯЁ'’`]*(?:[- ][а-яёА-ЯЁ'’`]+)*$/;
+const INN_REGEX = /^(?:\d{10}|\d{12})$/;
+const OGRN_REGEX = /^(?:\d{13}|\d{15})$/;
 const KPP_REGEX = /^\d{9}$/;
 const SNILS_REGEX = /^\d{11}$/;
 

@@ -103,6 +103,11 @@ class ApplicationService:
         elif not raw_fire:
             fire_date = None
 
+        phone_val = _s(student_data.get("student_telephone") or student_data.get("phone"))
+        email_val = _s(student_data.get("student_email") or student_data.get("email"))
+        edu_val = _s(student_data.get("education") or student_data.get("education_level"))
+        dip_num = _s(student_data.get("diploma_seriesnumber") or student_data.get("diploma_series_number"))
+
         if not person:
             person = Person(
                 snils=clean_snils,
@@ -111,11 +116,11 @@ class ApplicationService:
                 patronymic=_s(student_data.get("student_patronymic")) or None,
                 birthdate=birthdate,
                 citizenship=_s(student_data.get("citizenship")) or "РФ",
-                phone=_s(student_data.get("student_telephone")),
-                email=_s(student_data.get("student_email")),
-                education_level=_s(student_data.get("education")),
+                phone=phone_val,
+                email=email_val,
+                education_level=edu_val,
                 institute_name=_s(student_data.get("institute_name")),
-                diploma_series_number=_s(student_data.get("diploma_seriesnumber")) or None,
+                diploma_series_number=dip_num or None,
                 diploma_date=diploma_date,
                 diploma_lastname=_s(student_data.get("diploma_lastname")) or None,
                 fire_safety_document_type=_s(student_data.get("fire_safety_document_type")) or None,
@@ -126,17 +131,33 @@ class ApplicationService:
             )
             db.session.add(person)
         else:
-            # Обновляем контактные данные и образование
+            # Обновляем данные гражданина
             person.lastname = _s(student_data.get("student_lastname")) or person.lastname
             person.firstname = _s(student_data.get("student_firstname")) or person.firstname
-            person.patronymic = _s(student_data.get("student_patronymic")) or person.patronymic
-            person.phone = _s(student_data.get("student_telephone")) or person.phone
-            person.email = _s(student_data.get("student_email")) or person.email
-            person.education_level = _s(student_data.get("education")) or person.education_level
-            person.institute_name = _s(student_data.get("institute_name")) or person.institute_name
-            person.diploma_series_number = _s(student_data.get("diploma_seriesnumber")) or person.diploma_series_number
-            person.diploma_date = diploma_date
-            person.diploma_lastname = _s(student_data.get("diploma_lastname")) or person.diploma_lastname
+            person.patronymic = _s(student_data.get("student_patronymic")) or None
+            if birthdate:
+                person.birthdate = birthdate
+            if student_data.get("citizenship"):
+                person.citizenship = _s(student_data.get("citizenship"))
+            if phone_val:
+                person.phone = phone_val
+            if email_val:
+                person.email = email_val
+            if edu_val:
+                person.education_level = edu_val
+            if student_data.get("institute_name"):
+                person.institute_name = _s(student_data.get("institute_name"))
+
+            if edu_val == "Неоконченное высшее (студент)":
+                person.diploma_series_number = None
+                person.diploma_date = None
+                person.diploma_lastname = None
+            else:
+                if dip_num:
+                    person.diploma_series_number = dip_num
+                person.diploma_date = diploma_date
+                person.diploma_lastname = _s(student_data.get("diploma_lastname")) or None
+
             if student_data.get("fire_safety_document_type"):
                 person.fire_safety_document_type = _s(student_data.get("fire_safety_document_type"))
                 person.fire_institution = _s(student_data.get("fire_institution")) or None
@@ -157,7 +178,7 @@ class ApplicationService:
             listener = ApplicationListener(
                 application=application,
                 person=person,
-                position=_s(s_data.get("student_position")),
+                position=_s(s_data.get("student_position") or s_data.get("position")),
                 diploma_delivery=s_data.get("diploma_delivery") or "personal",
                 delivery_address=_s(s_data.get("delivery_address")) or None
             )
@@ -177,10 +198,25 @@ class ApplicationService:
                 start_d = cat_item.get("start_date")
                 end_d = cat_item.get("end_date")
 
-                if isinstance(start_d, str):
-                    start_d = datetime.strptime(start_d, "%Y-%m-%d").date()
-                if isinstance(end_d, str):
-                    end_d = datetime.strptime(end_d, "%Y-%m-%d").date()
+                if isinstance(start_d, str) and start_d.strip():
+                    parsed_s = None
+                    for fmt in ("%Y-%m-%d", "%d.%m.%Y"):
+                        try:
+                            parsed_s = datetime.strptime(start_d.strip(), fmt).date()
+                            break
+                        except ValueError:
+                            pass
+                    start_d = parsed_s
+
+                if isinstance(end_d, str) and end_d.strip():
+                    parsed_e = None
+                    for fmt in ("%Y-%m-%d", "%d.%m.%Y"):
+                        try:
+                            parsed_e = datetime.strptime(end_d.strip(), fmt).date()
+                            break
+                        except ValueError:
+                            pass
+                    end_d = parsed_e
 
                 if not start_d or not end_d:
                     continue
@@ -206,50 +242,54 @@ class ApplicationService:
         Реквизиты организации сохраняются непосредственно внутри самой заявки.
         Возвращает объект Application с уникальным app_number и secret_token.
         """
-        try:
-            app_number = cls.generate_app_number(direction)
-            _s = cls._s
+        _s = cls._s
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                app_number = cls.generate_app_number(direction)
 
-            application = Application(
-                app_number=app_number,
-                direction=direction,
-                study_form=study_form,
-                status=ApplicationStatus.DRAFT.value,
-                # Данные организации в заявке
-                org_full_name=_s(org_data.get("organization_full_name")),
-                org_short_name=_s(org_data.get("organization_short_name")),
-                inn=cls.clean_digits(org_data.get("inn")),
-                kpp=cls.clean_digits(org_data.get("kpp")),
-                ogrn=cls.clean_digits(org_data.get("ogrn")),
-                bank_name=_s(org_data.get("bank_name")),
-                bik=cls.clean_digits(org_data.get("bik")),
-                account_number=cls.clean_digits(org_data.get("rasch_schot")),
-                boss_lastname=_s(org_data.get("boss_lastname")),
-                boss_firstname=_s(org_data.get("boss_firstname")),
-                boss_patronymic=_s(org_data.get("boss_patronymic")) or None,
-                boss_position=_s(org_data.get("doljnost_boss")),
-                boss_authority=_s(org_data.get("polnamochia_boss")),
-                legal_address=_s(org_data.get("yur_address")),
-                actual_address=_s(org_data.get("fakt_address")),
-                phone=_s(org_data.get("telephone")),
-                email=_s(org_data.get("email")),
-                executor_fio=_s(org_data.get("fio_executor")),
-                executor_position=_s(org_data.get("doljnost_executor")),
-                executor_phone=_s(org_data.get("telephone_executor")),
-                executor_email=_s(org_data.get("email")),
-                last_edited_by=None
-            )
-            db.session.add(application)
-            db.session.flush()
+                application = Application(
+                    app_number=app_number,
+                    direction=direction,
+                    study_form=study_form,
+                    status=ApplicationStatus.DRAFT.value,
+                    # Данные организации в заявке (поддерживаем оба формата ключей)
+                    org_full_name=_s(org_data.get("organization_full_name") or org_data.get("full_name")),
+                    org_short_name=_s(org_data.get("organization_short_name") or org_data.get("short_name")),
+                    inn=cls.clean_digits(org_data.get("inn")),
+                    kpp=cls.clean_digits(org_data.get("kpp")),
+                    ogrn=cls.clean_digits(org_data.get("ogrn")),
+                    bank_name=_s(org_data.get("bank_name")),
+                    bik=cls.clean_digits(org_data.get("bik")),
+                    account_number=cls.clean_digits(org_data.get("rasch_schot") or org_data.get("account_number")),
+                    boss_lastname=_s(org_data.get("boss_lastname")),
+                    boss_firstname=_s(org_data.get("boss_firstname")),
+                    boss_patronymic=_s(org_data.get("boss_patronymic")) or None,
+                    boss_position=_s(org_data.get("doljnost_boss") or org_data.get("boss_position")),
+                    boss_authority=_s(org_data.get("polnamochia_boss") or org_data.get("boss_authority")),
+                    legal_address=_s(org_data.get("yur_address") or org_data.get("legal_address")),
+                    actual_address=_s(org_data.get("fakt_address") or org_data.get("actual_address")),
+                    phone=_s(org_data.get("telephone") or org_data.get("phone")),
+                    email=_s(org_data.get("email")),
+                    executor_fio=_s(org_data.get("fio_executor") or org_data.get("executor_fio")),
+                    executor_position=_s(org_data.get("doljnost_executor") or org_data.get("executor_position")),
+                    executor_phone=_s(org_data.get("telephone_executor") or org_data.get("executor_phone")),
+                    executor_email=_s(org_data.get("executor_email") or org_data.get("email")),
+                    last_edited_by=None
+                )
+                db.session.add(application)
+                db.session.flush()
 
-            # Слушатели и их курсы
-            cls._save_application_listeners(application, students_data)
+                # Слушатели и их курсы
+                cls._save_application_listeners(application, students_data)
 
-            db.session.commit()
-            return application
-        except Exception:
-            db.session.rollback()
-            raise
+                db.session.commit()
+                return application
+            except Exception as e:
+                db.session.rollback()
+                if "app_number" in str(e) and attempt < max_retries - 1:
+                    continue
+                raise
 
     @classmethod
     def update_application_draft(
@@ -270,29 +310,37 @@ class ApplicationService:
         try:
             _s = cls._s
             # Обновляем организацию прямо в заявке
-            application.org_full_name = _s(org_data.get("organization_full_name"))
-            application.org_short_name = _s(org_data.get("organization_short_name"))
+            application.org_full_name = _s(org_data.get("organization_full_name") or org_data.get("full_name"))
+            application.org_short_name = _s(org_data.get("organization_short_name") or org_data.get("short_name"))
             application.inn = cls.clean_digits(org_data.get("inn"))
             application.kpp = cls.clean_digits(org_data.get("kpp"))
             application.ogrn = cls.clean_digits(org_data.get("ogrn"))
             application.bank_name = _s(org_data.get("bank_name"))
             application.bik = cls.clean_digits(org_data.get("bik"))
-            application.account_number = cls.clean_digits(org_data.get("rasch_schot"))
+            application.account_number = cls.clean_digits(org_data.get("rasch_schot") or org_data.get("account_number"))
             application.boss_lastname = _s(org_data.get("boss_lastname"))
             application.boss_firstname = _s(org_data.get("boss_firstname"))
             application.boss_patronymic = _s(org_data.get("boss_patronymic")) or None
-            application.boss_position = _s(org_data.get("doljnost_boss"))
-            application.boss_authority = _s(org_data.get("polnamochia_boss"))
-            application.legal_address = _s(org_data.get("yur_address"))
-            application.actual_address = _s(org_data.get("fakt_address"))
-            application.phone = _s(org_data.get("telephone"))
+            application.boss_position = _s(org_data.get("doljnost_boss") or org_data.get("boss_position"))
+            application.boss_authority = _s(org_data.get("polnamochia_boss") or org_data.get("boss_authority"))
+            application.legal_address = _s(org_data.get("yur_address") or org_data.get("legal_address"))
+            application.actual_address = _s(org_data.get("fakt_address") or org_data.get("actual_address"))
+            application.phone = _s(org_data.get("telephone") or org_data.get("phone"))
             application.email = _s(org_data.get("email"))
-            application.executor_fio = _s(org_data.get("fio_executor"))
-            application.executor_position = _s(org_data.get("doljnost_executor"))
-            application.executor_phone = _s(org_data.get("telephone_executor"))
-            application.executor_email = _s(org_data.get("email"))
+            application.executor_fio = _s(org_data.get("fio_executor") or org_data.get("executor_fio"))
+            application.executor_position = _s(org_data.get("doljnost_executor") or org_data.get("executor_position"))
+            application.executor_phone = _s(org_data.get("telephone_executor") or org_data.get("executor_phone"))
+            application.executor_email = _s(org_data.get("executor_email") or org_data.get("email"))
             application.last_edited_by = "пользователь"
             application.updated_at = datetime.now(timezone.utc)
+
+            # Если заявка была подана со сканом или отправлена на доработку,
+            # изменение данных требует повторного подписания и нового скана
+            if application.status in (ApplicationStatus.SUBMITTED.value, ApplicationStatus.NEEDS_CORRECTION.value):
+                application.status = ApplicationStatus.DRAFT.value
+                application.signed_scan_filename = None
+                application.signed_scan_path = None
+                application.submitted_at = None
 
             # Удаляем старых слушателей (курсы удалятся каскадно)
             for old_listener in list(application.listeners):
@@ -378,6 +426,7 @@ class ApplicationService:
         """
         Сохраняет скан подписанной заявки, прикрепляет его к Application
         и переводит заявку в статус SUBMITTED.
+        Безопасно сохраняет кириллическое имя файла для отображения и создает ASCII-имя на диске.
         """
         application = Application.query.filter_by(secret_token=token).first()
         if not application:
@@ -386,19 +435,30 @@ class ApplicationService:
         if not file_storage or not file_storage.filename:
             raise ValueError("Файл не выбран.")
 
-        orig_filename = secure_filename(file_storage.filename)
-        ext = orig_filename.rsplit(".", 1)[-1].lower() if "." in orig_filename else ""
+        raw_filename = file_storage.filename or ""
+        ext = raw_filename.rsplit(".", 1)[-1].lower() if "." in raw_filename else ""
+        allowed = {"pdf", "jpg", "jpeg", "png", "tif", "tiff"}
+        if ext not in allowed:
+            raise ValueError(f"Недопустимый формат файла (.{ext}). Разрешены только: {', '.join(allowed)}")
+
+        # Очистка имени от path traversal и спецсимволов с сохранением русских букв
+        clean_name = os.path.basename(raw_filename).replace("\x00", "").strip()
+        clean_name = re.sub(r'[\\/:*?"<>|]', "", clean_name).strip()
+        if not clean_name:
+            clean_name = f"scan.{ext}"
 
         os.makedirs(upload_folder, exist_ok=True)
 
-        unique_name = f"{application.app_number}_{uuid.uuid4().hex[:8]}.{ext}"
+        # ASCII-безопасное уникальное имя для сохранения на диске
+        safe_num = re.sub(r"[^a-zA-Z0-9_\-]", "_", application.app_number).strip("_")
+        unique_name = f"{safe_num}_{uuid.uuid4().hex[:8]}.{ext}"
         target_path = os.path.join(upload_folder, unique_name)
 
         file_storage.save(target_path)
         file_size = os.path.getsize(target_path) if os.path.exists(target_path) else 0
 
         # Обновляем заявку
-        application.signed_scan_filename = orig_filename
+        application.signed_scan_filename = clean_name
         application.signed_scan_path = target_path
         application.status = ApplicationStatus.SUBMITTED.value
         application.submitted_at = datetime.now(timezone.utc)
@@ -406,7 +466,7 @@ class ApplicationService:
         attachment = ApplicationAttachment(
             application=application,
             file_type="signed_scan",
-            original_filename=orig_filename,
+            original_filename=clean_name,
             stored_filename=unique_name,
             file_path=target_path,
             file_size=file_size

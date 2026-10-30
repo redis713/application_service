@@ -54,7 +54,11 @@
             </div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
                 <span style="color: #64748b;">Скан заявления:</span>
-                <span style="color: #059669; font-weight: bold;">Прикреплен ({{ application.signed_scan_filename }})</span>
+                <span>
+                    <a href="{{ url_for('apply.view_scan', token=application.secret_token) }}" target="_blank" style="color: #059669; font-weight: bold; text-decoration: underline;" title="Открыть скан в новой вкладке">
+                        Прикреплен ({{ application.signed_scan_filename }}) ↗
+                    </a>
+                </span>
             </div>
             <div style="display: flex; justify-content: space-between;">
                 <span style="color: #64748b;">Дата и время подачи:</span>

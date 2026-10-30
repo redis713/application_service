@@ -41,7 +41,7 @@ class Person(db.Model):
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
 
     # Связи
-    listeners = db.relationship("ApplicationListener", back_populates="person", cascade="all, delete-orphan")
+    listeners = db.relationship("ApplicationListener", back_populates="person")
 
     @property
     def full_name(self) -> str:
@@ -50,9 +50,11 @@ class Person(db.Model):
 
     @property
     def formatted_snils(self) -> str:
-        s = self.snils or ""
+        import re
+        s = re.sub(r"\D", "", self.snils or "")
         if len(s) == 11:
             return f"{s[:3]}-{s[3:6]}-{s[6:9]} {s[9:]}"
+        return self.snils or ""
         return s
 
     def __repr__(self):

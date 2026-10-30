@@ -34,8 +34,10 @@ def validate_ogrn(form, field):
 def validate_kpp(form, field):
     if field.data:
         val = re.sub(r"\D", "", field.data)
+        if not val:
+            return  # Разрешаем пустое поле или прочерк для ИП
         if len(val) != 9:
-            raise ValidationError("КПП должен состоять из 9 цифр.")
+            raise ValidationError("КПП должен состоять из 9 цифр (для ИП оставьте поле пустым).")
 
 def validate_snils(form, field):
     if field.data:
@@ -115,20 +117,41 @@ class StudentForm(FlaskForm):
     diploma_date = DateField("Дата выдачи диплома", format=["%Y-%m-%d", "%d.%m.%Y"], validators=[Optional()])
     diploma_lastname = StringField("Фамилия в дипломе", validators=[Optional(), Length(max=100)])
 
-    def validate_diploma_seriesnumber(self, field):
-        if self.education.data in ("Высшее образование", "Среднее профессиональное"):
-            if not field.data or not field.data.strip():
-                raise ValidationError("Укажите серию и номер диплома")
+    def validate_student_birthdate(self, field):
+        if field.data:
+            from datetime import date
+            if field.data >= date.today():
+                raise ValidationError("Дата рождения не может быть в будущем.")
 
     def validate_diploma_date(self, field):
-        if self.education.data in ("Высшее образование", "Среднее профессиональное"):
-            if not field.data:
-                raise ValidationError("Укажите дату выдачи диплома")
+        if field.data:
+            from datetime import date
+            if field.data > date.today():
+                raise ValidationError("Дата выдачи диплома не может быть в будущем.")
 
-    def validate_diploma_lastname(self, field):
+    def validate_fire_date(self, field):
+        if field.data:
+            from datetime import date
+            if field.data > date.today():
+                raise ValidationError("Дата выдачи документа не может быть в будущем.")
+
+    def validate(self, extra_validators=None):
+        valid = super().validate(extra_validators=extra_validators)
         if self.education.data in ("Высшее образование", "Среднее профессиональное"):
-            if not field.data or not field.data.strip():
-                raise ValidationError("Укажите фамилию в дипломе")
+            if not self.diploma_seriesnumber.data or not self.diploma_seriesnumber.data.strip():
+                self.diploma_seriesnumber.errors = list(self.diploma_seriesnumber.errors or ()) + ["Укажите серию и номер диплома"]
+                valid = False
+            if not self.diploma_date.data:
+                self.diploma_date.errors = list(self.diploma_date.errors or ()) + ["Укажите дату выдачи диплома"]
+                valid = False
+            if not self.diploma_lastname.data or not self.diploma_lastname.data.strip():
+                self.diploma_lastname.errors = list(self.diploma_lastname.errors or ()) + ["Укажите фамилию в дипломе"]
+                valid = False
+        if self.diploma_delivery.data == "mail":
+            if not self.delivery_address.data or not self.delivery_address.data.strip():
+                self.delivery_address.errors = list(self.delivery_address.errors or ()) + ["Укажите почтовый адрес для отправки удостоверения."]
+                valid = False
+        return valid
 
     # Поля квалификации в области пожарной безопасности (заполняются при направлении 'fire')
     fire_safety_document_type = SelectField(

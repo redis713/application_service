@@ -34,7 +34,9 @@ def create_app(config_class=Config):
             ListenerCourse,
             ApplicationAttachment,
         )
-        db.create_all()
+        if flask_app.config.get("TESTING"):
+            db.create_all()
+
         from app.data.programs_seed import seed_programs
         try:
             seeded = seed_programs()
