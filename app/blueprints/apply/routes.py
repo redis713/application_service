@@ -175,6 +175,9 @@ def form_view(study_form: str, direction: str):
                 if not s_form.fire_safety_document_type.data:
                     add_field_error(s_form.fire_safety_document_type, "Выберите основание пожарного образования.")
                     is_valid = False
+                if not s_form.fire_institution.data or not s_form.fire_institution.data.strip():
+                    add_field_error(s_form.fire_institution, "Укажите образовательное учреждение, выдавшее документ.")
+                    is_valid = False
                 if not s_form.fire_series.data or not s_form.fire_series.data.strip():
                     add_field_error(s_form.fire_series, "Укажите серию документа.")
                     is_valid = False
@@ -262,6 +265,9 @@ def edit_view(token: str):
             for s_form in form.students:
                 if not s_form.fire_safety_document_type.data:
                     add_field_error(s_form.fire_safety_document_type, "Выберите основание пожарного образования.")
+                    is_valid = False
+                if not s_form.fire_institution.data or not s_form.fire_institution.data.strip():
+                    add_field_error(s_form.fire_institution, "Укажите образовательное учреждение, выдавшее документ.")
                     is_valid = False
                 if not s_form.fire_series.data or not s_form.fire_series.data.strip():
                     add_field_error(s_form.fire_series, "Укажите серию документа.")

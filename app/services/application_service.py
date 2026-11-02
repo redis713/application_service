@@ -29,19 +29,31 @@ class ApplicationService:
         return re.sub(r"\D", "", str(value))
 
     @classmethod
-    def generate_app_number(cls, direction: str) -> str:
+    def generate_app_number(cls, direction: str, study_form: Optional[str] = None) -> str:
         """
-        Генерирует уникальный удобочитаемый номер заявки, например:
-        ГО-2026-0001, ПБ-2026-0002
+        Генерирует уникальный удобочитаемый номер заявки с указанием направления и формы обучения, например:
+        ГО-Д-2026-0001 (ГОЧС, дистанционно), ПБ-О-2026-0002 (Пожарная безопасность, очно)
         """
         prefix_map = {
             TrainingDirection.GOCHS.value: "ГО",
             TrainingDirection.FIRE.value: "ПБ",
             TrainingDirection.CALL112.value: "112",
+            "call112": "112",
             TrainingDirection.ANTITERROR.value: "АТ",
             TrainingDirection.SPECIALIST.value: "СПГО",
         }
-        prefix = prefix_map.get(direction, "ЗЯВ")
+        dir_key = direction.value if hasattr(direction, "value") else str(direction).strip().lower()
+        prefix = prefix_map.get(dir_key, "ЗЯВ")
+
+        form_letter = ""
+        if study_form:
+            norm_form = str(study_form).strip().lower()
+            if norm_form in (StudyForm.DISTANT.value, "distant", "дистант", "дистанционно", "дистанционное"):
+                form_letter = "Д"
+            elif norm_form in (StudyForm.OCHNO.value, "ochno", "очно", "очное", "очно-заочно", "очно-заочное"):
+                form_letter = "О"
+
+        full_prefix = f"{prefix}-{form_letter}" if form_letter else prefix
         year = datetime.now().year
 
         # Считаем количество заявок за текущий год
@@ -50,11 +62,11 @@ class ApplicationService:
         ).count()
         next_num = current_year_count + 1
 
-        candidate = f"{prefix}-{year}-{next_num:04d}"
+        candidate = f"{full_prefix}-{year}-{next_num:04d}"
         # Проверяем на случай коллизий
         while Application.query.filter_by(app_number=candidate).first() is not None:
             next_num += 1
-            candidate = f"{prefix}-{year}-{next_num:04d}"
+            candidate = f"{full_prefix}-{year}-{next_num:04d}"
 
         return candidate
 
@@ -246,7 +258,7 @@ class ApplicationService:
         max_retries = 5
         for attempt in range(max_retries):
             try:
-                app_number = cls.generate_app_number(direction)
+                app_number = cls.generate_app_number(direction, study_form)
 
                 application = Application(
                     app_number=app_number,
@@ -449,8 +461,15 @@ class ApplicationService:
 
         os.makedirs(upload_folder, exist_ok=True)
 
-        # ASCII-безопасное уникальное имя для сохранения на диске
-        safe_num = re.sub(r"[^a-zA-Z0-9_\-]", "_", application.app_number).strip("_")
+        # ASCII-безопасное уникальное имя для сохранения на диске (с транслитерацией номера)
+        translit_map = {
+            'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'E', 'Ж': 'ZH',
+            'З': 'Z', 'И': 'I', 'Й': 'Y', 'К': 'K', 'Л': 'L', 'М': 'M', 'Н': 'N', 'О': 'O',
+            'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T', 'У': 'U', 'Ф': 'F', 'Х': 'KH', 'Ц': 'TS',
+            'Ч': 'CH', 'Ш': 'SH', 'Щ': 'SCH', 'Ъ': '', 'Ы': 'Y', 'Ь': '', 'Э': 'E', 'Ю': 'YU', 'Я': 'YA'
+        }
+        ascii_num = "".join(translit_map.get(c, c) for c in (application.app_number or "").upper())
+        safe_num = re.sub(r"[^A-Za-z0-9_\-]", "_", ascii_num).strip("_") or "APP"
         unique_name = f"{safe_num}_{uuid.uuid4().hex[:8]}.{ext}"
         target_path = os.path.join(upload_folder, unique_name)
 

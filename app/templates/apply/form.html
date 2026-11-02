@@ -265,20 +265,20 @@
                         </div>
                     </div>
 
-                    <div class="form-row diploma-details-row" style="display: none;">
+                    <div class="form-row diploma-details-row" {% if student_form.education.data == 'Неоконченное высшее (студент)' %}style="display: none;"{% endif %}>
                         <div class="form-group col-1 {% if student_form.diploma_seriesnumber.errors %}has-error{% endif %}">
-                            {{ student_form.diploma_seriesnumber.label }}
-                            {{ student_form.diploma_seriesnumber(class="form-control diploma-input", placeholder="Серия и номер") }}
+                            {{ student_form.diploma_seriesnumber.label }} <span style="color: #ef4444; font-weight: bold;">*</span>
+                            {{ student_form.diploma_seriesnumber(class="form-control diploma-input", placeholder="Серия и номер", required="required") }}
                             {% for err in student_form.diploma_seriesnumber.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
                         <div class="form-group col-1 {% if student_form.diploma_date.errors %}has-error{% endif %}">
-                            {{ student_form.diploma_date.label }}
-                            {{ student_form.diploma_date(class="form-control diploma-input", type="date") }}
+                            {{ student_form.diploma_date.label }} <span style="color: #ef4444; font-weight: bold;">*</span>
+                            {{ student_form.diploma_date(class="form-control diploma-input", type="date", required="required") }}
                             {% for err in student_form.diploma_date.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
                         <div class="form-group col-1 {% if student_form.diploma_lastname.errors %}has-error{% endif %}">
-                            {{ student_form.diploma_lastname.label }}
-                            {{ student_form.diploma_lastname(class="form-control diploma-input", placeholder="Фамилия в дипломе") }}
+                            {{ student_form.diploma_lastname.label }} <span style="color: #ef4444; font-weight: bold;">*</span>
+                            {{ student_form.diploma_lastname(class="form-control diploma-input", placeholder="Фамилия в дипломе", required="required") }}
                             {% for err in student_form.diploma_lastname.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
                     </div>
@@ -299,12 +299,13 @@
                             {% for err in student_form.fire_safety_document_type.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
 
+                        <div class="form-group {% if student_form.fire_institution.errors %}has-error{% endif %}" style="margin-bottom: 14px;">
+                            {{ student_form.fire_institution.label }} <span style="color: #ef4444; font-weight: bold;">*</span>
+                            {{ student_form.fire_institution(class="form-control", placeholder="Полное наименование образовательного учреждения, выдавшего документ", required="required") }}
+                            {% for err in student_form.fire_institution.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
+                        </div>
+
                         <div class="form-row">
-                            <div class="form-group col-2 {% if student_form.fire_institution.errors %}has-error{% endif %}">
-                                {{ student_form.fire_institution.label }}
-                                {{ student_form.fire_institution(class="form-control", placeholder="Учебное заведение (если отличается от основного)") }}
-                                {% for err in student_form.fire_institution.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
-                            </div>
                             <div class="form-group col-1 {% if student_form.fire_series.errors %}has-error{% endif %}">
                                 {{ student_form.fire_series.label }} <span style="color: #ef4444; font-weight: bold;">*</span>
                                 {{ student_form.fire_series(class="form-control", placeholder="Серия", required="required") }}
@@ -489,11 +490,21 @@ function handleEducationChange(selectEl) {
     const card = selectEl.closest(".student-card");
     if (!card) return;
     const diplomaRow = card.querySelector(".diploma-details-row");
-    if (!diplomaRow) return;
+    const instituteInput = card.querySelector('[name$="-institute_name"]');
 
     if (selectEl.value) {
         selectEl.closest(".form-group")?.classList.remove("has-error");
+        if (instituteInput) {
+            instituteInput.disabled = false;
+        }
+    } else {
+        if (instituteInput) {
+            instituteInput.disabled = true;
+            instituteInput.value = "";
+        }
     }
+
+    if (!diplomaRow) return;
 
     const showDiploma = selectEl.value === "Высшее образование" || selectEl.value === "Среднее профессиональное";
     if (showDiploma) {
@@ -743,10 +754,9 @@ function addNewStudent() {
         <h4 style="margin: 18px 0 10px 0; color: #475569; font-size: 0.95rem;">Базовое профессиональное образование</h4>
         <div class="form-row">
             <div class="form-group col-1">
-                <label>Уровень образования</label>
+                <label>Уровень базового образования</label>
                 <select name="students-${sIdx}-education" class="form-control education-select" onchange="handleEducationChange(this)" required>
-                    <option value="">Выберите уровень образования</option>
-                    <option value="Высшее образование">Высшее образование</option>
+                    <option value="Высшее образование" selected>Высшее образование</option>
                     <option value="Среднее профессиональное">Среднее профессиональное образование</option>
                     <option value="Неоконченное высшее (студент)">Неоконченное высшее (справка об обучении)</option>
                 </select>
@@ -757,18 +767,18 @@ function addNewStudent() {
             </div>
         </div>
 
-        <div class="form-row diploma-details-row" style="display: none;">
+        <div class="form-row diploma-details-row">
             <div class="form-group col-1">
-                <label>Серия и номер диплома</label>
-                <input type="text" name="students-${sIdx}-diploma_seriesnumber" class="form-control diploma-input" placeholder="Серия и номер">
+                <label>Серия и номер диплома <span style="color: #ef4444; font-weight: bold;">*</span></label>
+                <input type="text" name="students-${sIdx}-diploma_seriesnumber" class="form-control diploma-input" placeholder="Серия и номер" required>
             </div>
             <div class="form-group col-1">
-                <label>Дата выдачи диплома</label>
-                <input type="date" name="students-${sIdx}-diploma_date" class="form-control diploma-input">
+                <label>Дата выдачи диплома <span style="color: #ef4444; font-weight: bold;">*</span></label>
+                <input type="date" name="students-${sIdx}-diploma_date" class="form-control diploma-input" required>
             </div>
             <div class="form-group col-1">
-                <label>Фамилия в дипломе</label>
-                <input type="text" name="students-${sIdx}-diploma_lastname" class="form-control diploma-input" placeholder="Фамилия в дипломе">
+                <label>Фамилия в дипломе <span style="color: #ef4444; font-weight: bold;">*</span></label>
+                <input type="text" name="students-${sIdx}-diploma_lastname" class="form-control diploma-input" placeholder="Фамилия в дипломе" required>
             </div>
         </div>
 
@@ -789,11 +799,12 @@ function addNewStudent() {
                     </select>
                 </div>
 
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label>Образовательное учреждение, выдавшее документ <span style="color: #ef4444; font-weight: bold;">*</span></label>
+                    <input type="text" name="students-${sIdx}-fire_institution" class="form-control" placeholder="Полное наименование образовательного учреждения, выдавшего документ" required>
+                </div>
+
                 <div class="form-row">
-                    <div class="form-group col-2">
-                        <label>Образовательное учреждение, выдавшее документ</label>
-                        <input type="text" name="students-${sIdx}-fire_institution" class="form-control" placeholder="Учебное заведение (если отличается от основного)">
-                    </div>
                     <div class="form-group col-1">
                         <label>Серия документа <span style="color: #ef4444; font-weight: bold;">*</span></label>
                         <input type="text" name="students-${sIdx}-fire_series" class="form-control" placeholder="Серия" required>

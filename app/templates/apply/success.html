@@ -31,9 +31,31 @@
         <h1 style="color: var(--primary-color); margin: 15px 0 10px 0; font-size: 2.2rem;">
             Заявка {{ application.app_number }}
         </h1>
-        <p style="color: #64748b; font-size: 1.1rem; margin-bottom: 30px;">
+        <p style="color: #64748b; font-size: 1.1rem; margin-bottom: 25px;">
             Спасибо! Все необходимые данные и скан заявления с подписью получены.
         </p>
+
+        <!-- Блок персональной ссылки на редактирование заявки -->
+        <div style="background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 12px; padding: 22px 24px; text-align: left; max-width: 600px; margin: 0 auto 25px auto; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.08);">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <span style="font-size: 1.35rem;">📌</span>
+                <strong style="color: #92400e; font-size: 1.05rem;">Персональная ссылка для изменения заявки</strong>
+            </div>
+            <p style="color: #b45309; font-size: 0.92rem; line-height: 1.5; margin: 0 0 14px 0;">
+                <strong>Настоятельно просим вас сохранить эту ссылку!</strong> Скопируйте её или добавьте в закладки браузера. Если вам потребуется скорректировать реквизиты организации, заменить слушателя или изменить даты обучения — перейдите по ней в любое время до издания приказа. <em>Не теряйте эту ссылку.</em>
+            </p>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="edit-link-field" readonly 
+                       value="{{ url_for('apply.edit_view', token=application.secret_token, _external=True) }}"
+                       style="flex: 1; min-width: 260px; padding: 10px 14px; font-size: 0.9rem; border: 1.5px solid #f59e0b; border-radius: 6px; background: #ffffff; color: #1e293b; font-family: monospace; cursor: text;"
+                       onclick="this.select();">
+                <button type="button" id="copy-link-btn" onclick="copyEditLink()" 
+                        style="padding: 10px 18px; background: #f59e0b; color: #ffffff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap;">
+                    📋 Скопировать
+                </button>
+            </div>
+            <div id="copy-status" style="display: none; color: #15803d; font-size: 0.85rem; font-weight: 600; margin-top: 8px;">✓ Ссылка скопирована в буфер обмена!</div>
+        </div>
 
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 25px; text-align: left; max-width: 600px; margin: 0 auto 30px auto;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
@@ -67,6 +89,9 @@
         </div>
 
         <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <a href="{{ url_for('apply.edit_view', token=application.secret_token) }}" style="display: inline-flex; align-items: center; padding: 14px 24px; background: #e0f2fe; border: 2px solid #38bdf8; border-radius: 8px; color: #0369a1; text-decoration: none; font-weight: 600;">
+                ✏️ Изменить данные заявки
+            </a>
             <a href="{{ url_for('apply.download_docx', token=application.secret_token) }}" class="btn-primary-action">
                 📄 Скачать бланк заявления повторно
             </a>
@@ -76,4 +101,45 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyEditLink() {
+    const input = document.getElementById("edit-link-field");
+    if (!input) return;
+    input.select();
+    input.setSelectionRange(0, 99999);
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(input.value).then(() => {
+            showCopiedFeedback();
+        }).catch(() => {
+            fallbackCopy();
+        });
+    } else {
+        fallbackCopy();
+    }
+}
+
+function fallbackCopy() {
+    try {
+        document.execCommand("copy");
+        showCopiedFeedback();
+    } catch (err) {
+        alert("Пожалуйста, скопируйте ссылку вручную: " + document.getElementById("edit-link-field").value);
+    }
+}
+
+function showCopiedFeedback() {
+    const btn = document.getElementById("copy-link-btn");
+    const status = document.getElementById("copy-status");
+    if (btn) btn.textContent = "✓ Скопировано!";
+    if (status) status.style.display = "block";
+    setTimeout(() => {
+        if (btn) btn.textContent = "📋 Скопировать";
+        if (status) status.style.display = "none";
+    }, 3000);
+}
+</script>
 {% endblock %}
