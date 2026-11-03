@@ -1,6 +1,6 @@
 import io
 import os
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 from docxtpl import DocxTemplate
 from app.constants import StudyForm, TrainingDirection, DeliveryType
 
@@ -252,3 +252,82 @@ class DocxService:
         doc.save(buffer)
         buffer.seek(0)
         return buffer
+
+    @classmethod
+    def generate_docx_for_application(cls, application, templates_dir: str = None) -> Tuple[io.BytesIO, str]:
+        """
+        Генерирует официальный .docx документ для переданной модели Application.
+        Возвращает кортеж (BytesIO поток, рекомендуемое имя файла для скачивания).
+        """
+        org_data = {
+            "full_name": application.org_full_name,
+            "short_name": application.org_short_name,
+            "inn": application.inn,
+            "kpp": application.kpp,
+            "ogrn": application.ogrn,
+            "bank_name": application.bank_name,
+            "bik": application.bik,
+            "account_number": application.account_number,
+            "boss_lastname": application.boss_lastname,
+            "boss_firstname": application.boss_firstname,
+            "boss_patronymic": application.boss_patronymic,
+            "boss_position": application.boss_position,
+            "boss_authority": application.boss_authority,
+            "legal_address": application.legal_address,
+            "actual_address": application.actual_address,
+            "phone": application.phone,
+            "email": application.email,
+            "executor_fio": application.executor_fio,
+            "executor_position": application.executor_position,
+            "executor_phone": application.executor_phone,
+            "executor_email": application.executor_email,
+        }
+
+        listeners_data = []
+        for l in application.listeners:
+            p = l.person
+            courses = []
+            for c in l.courses:
+                courses.append({
+                    "code": c.program.code if c.program else "",
+                    "title": c.program.title if c.program else "",
+                    "hours": c.program.hours if c.program else 0,
+                    "start_date": c.start_date,
+                    "end_date": c.end_date,
+                })
+            listeners_data.append({
+                "lastname": p.lastname,
+                "firstname": p.firstname,
+                "patronymic": p.patronymic,
+                "birthdate": p.birthdate,
+                "citizenship": p.citizenship,
+                "education_level": p.education_level,
+                "institute_name": p.institute_name,
+                "diploma_series_number": p.diploma_series_number,
+                "diploma_date": p.diploma_date,
+                "diploma_lastname": p.diploma_lastname,
+                "snils": p.formatted_snils,
+                "position": l.position,
+                "phone": p.phone,
+                "email": p.email,
+                "diploma_delivery": l.diploma_delivery,
+                "delivery_address": l.delivery_address or "",
+                "fire_safety_document_type": p.fire_safety_document_type,
+                "fire_institution": p.fire_institution,
+                "fire_series": p.fire_series,
+                "fire_number": p.fire_number,
+                "fire_date": p.fire_date,
+                "courses": courses,
+            })
+
+        stream = cls.generate_docx_stream(
+            org_data=org_data,
+            listeners_data=listeners_data,
+            study_form=application.study_form,
+            direction=application.direction,
+            templates_dir=templates_dir
+        )
+
+        clean_org = (application.org_short_name or "").replace('"', '').replace("'", "").strip()
+        download_filename = f"Заявка_{application.app_number}_{clean_org}.docx"
+        return stream, download_filename

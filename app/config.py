@@ -43,6 +43,17 @@ class Config:
     WTF_CSRF_ENABLED = True
     WTF_CSRF_TIME_LIMIT = 10800  # 3 часа (в секундах) для комфортного заполнения больших заявок
 
+    # Хосты внутренней части для сотрудников (contractmaker.umcgochs.local)
+    INTERNAL_HOSTS = [
+        h.strip().lower()
+        for h in os.environ.get(
+            "INTERNAL_HOSTS",
+            "contractmaker.umcgochs.local,contractmaker.local"
+        ).split(",")
+        if h.strip()
+    ]
+    ALLOW_DEV_INTERNAL_ACCESS = os.environ.get("ALLOW_DEV_INTERNAL_ACCESS", "True").lower() in ("true", "1", "yes")
+
 
 # 2. Если в корне проекта создан пользовательский файл config.py,
 # подтягиваем параметры (например, SQLALCHEMY_DATABASE_URI) оттуда

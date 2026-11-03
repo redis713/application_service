@@ -1,0 +1,352 @@
+{% extends "internal/base_internal.html" %}
+
+{% block title %}Заявка № {{ application.app_number }}{% endblock %}
+
+{% block content %}
+<!-- Верхняя панель действий -->
+<div class="detail-topbar">
+    <div class="detail-topbar-left">
+        <a href="{{ url_for('internal.applications_list') }}" class="back-link">
+            &larr; Назад к реестру заявок
+        </a>
+        <div class="detail-title-row">
+            <h1>Заявка № {{ application.app_number }}</h1>
+            <span class="status-badge badge-{{ application.status }}">
+                {{ application.status_label }}
+            </span>
+        </div>
+    </div>
+
+    <div class="detail-actions">
+        <a href="{{ url_for('internal.download_application_docx', app_id=application.id) }}" class="btn-action-primary" title="Сгенерировать и скачать официальный бланк в формате Word (.docx)">
+            📥 Скачать заявку (.docx)
+        </a>
+        {% if application.signed_scan_path and scan_exists %}
+            <a href="{{ url_for('internal.view_application_scan', app_id=application.id) }}" target="_blank" class="btn-action-success" title="Просмотреть скан-копию заявления в браузере">
+                📄 Открыть скан
+            </a>
+            <a href="{{ url_for('internal.view_application_scan', app_id=application.id, download=1) }}" class="btn-action-outline" title="Скачать файл скана на диск">
+                💾 Скачать скан
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 1. Параметры обучения и реквизиты организации -->
+<div class="detail-grid-2">
+    <!-- Организация -->
+    <div class="detail-card">
+        <div class="detail-card-header">
+            <h2>🏢 Направляющая организация</h2>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Полное наименование</div>
+            <div class="info-value bold">{{ application.org_full_name }}</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Краткое наименование</div>
+            <div class="info-value">{{ application.org_short_name }}</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; margin-bottom: 0.85rem;">
+            <div class="info-item" style="margin-bottom: 0;">
+                <div class="info-label">ИНН</div>
+                <div class="info-value bold">{{ application.inn }}</div>
+            </div>
+            <div class="info-item" style="margin-bottom: 0;">
+                <div class="info-label">КПП</div>
+                <div class="info-value">{{ application.kpp or '—' }}</div>
+            </div>
+            <div class="info-item" style="margin-bottom: 0;">
+                <div class="info-label">ОГРН</div>
+                <div class="info-value bold">{{ application.ogrn }}</div>
+            </div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Банковские реквизиты</div>
+            <div class="info-value">
+                <strong>Банк:</strong> {{ application.bank_name }}<br>
+                <strong>БИК:</strong> {{ application.bik }}<br>
+                <strong>Расчетный счет:</strong> {{ application.account_number }}
+            </div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Юридический адрес</div>
+            <div class="info-value">{{ application.legal_address }}</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Фактический / почтовый адрес</div>
+            <div class="info-value">{{ application.actual_address }}</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <div class="info-item">
+                <div class="info-label">Телефон организации</div>
+                <div class="info-value">{{ application.phone }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Email организации</div>
+                <div class="info-value">{{ application.email }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Руководитель, исполнитель и параметры заявки -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Руководитель и исполнитель -->
+        <div class="detail-card" style="margin-bottom: 0;">
+            <div class="detail-card-header">
+                <h2>👤 Руководство и контактные лица</h2>
+            </div>
+
+            <div class="info-item">
+                <div class="info-label">Руководитель организации</div>
+                <div class="info-value bold">{{ application.boss_full_name }}</div>
+                <div style="font-size: 0.85rem; color: #475569; margin-top: 0.15rem;">
+                    Должность: <strong>{{ application.boss_position }}</strong><br>
+                    Основание полномочий: <em>{{ application.boss_authority }}</em>
+                </div>
+            </div>
+
+            <hr style="border: none; border-top: 1px dashed var(--border-light); margin: 0.85rem 0;">
+
+            <div class="info-item">
+                <div class="info-label">Ответственный исполнитель</div>
+                <div class="info-value bold">{{ application.executor_fio }}</div>
+                <div style="font-size: 0.85rem; color: #475569; margin-top: 0.15rem;">
+                    Должность: <strong>{{ application.executor_position }}</strong><br>
+                    Телефон: <strong>{{ application.executor_phone }}</strong><br>
+                    Email: {{ application.executor_email or '—' }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Параметры обучения и даты -->
+        <div class="detail-card" style="margin-bottom: 0;">
+            <div class="detail-card-header">
+                <h2>📑 Параметры обучения и аудит</h2>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <div class="info-item">
+                    <div class="info-label">Направление</div>
+                    <div class="info-value bold">{{ application.direction_label }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Форма обучения</div>
+                    <div class="info-value bold">{{ application.study_form_label }}</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <div class="info-item">
+                    <div class="info-label">Создана</div>
+                    <div class="info-value">{{ application.created_at.strftime('%d.%m.%Y %H:%M') if application.created_at else '—' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Скан загружен</div>
+                    <div class="info-value">{{ application.submitted_at.strftime('%d.%m.%Y %H:%M') if application.submitted_at else 'Не загружен' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Прикрепленный скан заявления -->
+<div class="detail-card">
+    <div class="detail-card-header">
+        <h2>📄 Скан-копия подписанного заявления</h2>
+        {% if application.signed_scan_path and scan_exists %}
+            <div style="display: flex; gap: 0.5rem;">
+                <a href="{{ url_for('internal.view_application_scan', app_id=application.id) }}" target="_blank" class="btn-sm-action" style="background: #059669; color: #fff; border-color: #059669;">
+                    Открыть в новой вкладке ↗
+                </a>
+                <a href="{{ url_for('internal.view_application_scan', app_id=application.id, download=1) }}" class="btn-sm-action">
+                    Скачать файл
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if application.signed_scan_path and scan_exists %}
+        <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: var(--radius-sm); margin-bottom: 1rem;">
+            <div style="font-size: 1.5rem;">📎</div>
+            <div style="flex: 1;">
+                <div style="font-weight: 700; color: #065f46;">{{ application.signed_scan_filename or 'Заявление со сканом' }}</div>
+                <div style="font-size: 0.8rem; color: #047857;">
+                    Размер: {{ scan_size_str }} | Загружен: {{ application.submitted_at.strftime('%d.%m.%Y %H:%M') if application.submitted_at else 'ранее' }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Встроенный предпросмотр -->
+        <div class="scan-preview-box">
+            {% if scan_ext == 'pdf' %}
+                <iframe src="{{ url_for('internal.view_application_scan', app_id=application.id) }}" class="scan-frame"></iframe>
+            {% elif scan_ext in ['jpg', 'jpeg', 'png'] %}
+                <img src="{{ url_for('internal.view_application_scan', app_id=application.id) }}" alt="Скан заявления" class="scan-image-preview">
+            {% else %}
+                <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                    Файл формата .{{ scan_ext }} доступен для скачивания по кнопке выше.
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <div style="padding: 1.5rem; background-color: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-sm); color: #92400e;">
+            <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.35rem;">⚠️ Скан-копия заявления с подписью и печатью еще не загружена</div>
+            <div style="font-size: 0.88rem; line-height: 1.4;">
+                Организация сформировала черновик заявления, но еще не прикрепила скан-копию официального документа с подписью руководителя и печатью организации. Заявка имеет статус <strong>Черновик</strong>.
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- 3. Список слушателей -->
+<div class="detail-card">
+    <div class="detail-card-header">
+        <h2>👥 Слушатели на обучение (Всего: {{ application.listeners|length }})</h2>
+    </div>
+
+    {% if application.listeners %}
+        {% for listener in application.listeners %}
+            {% set person = listener.person %}
+            <div class="listener-card">
+                <div class="listener-card-header">
+                    <div>
+                        <div class="listener-name">{{ loop.index }}. {{ person.full_name }}</div>
+                        <div class="listener-pos">Должность в организации: <strong>{{ listener.position }}</strong></div>
+                    </div>
+                    <div>
+                        <span style="font-family: monospace; font-size: 0.92rem; font-weight: 700; background: #ffffff; padding: 0.3rem 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                            СНИЛС: {{ person.formatted_snils }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Персональные данные и контакты -->
+                <div class="listener-sub-grid">
+                    <div class="info-item">
+                        <div class="info-label">Дата рождения и гражданство</div>
+                        <div class="info-value">
+                            {{ person.birthdate.strftime('%d.%m.%Y') if person.birthdate else '—' }} ({{ person.citizenship }})
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Телефон слушателя</div>
+                        <div class="info-value bold">{{ person.phone or '—' }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Email слушателя</div>
+                        <div class="info-value">{{ person.email or '—' }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Доставка удостоверения/диплома</div>
+                        <div class="info-value">
+                            {{ listener.delivery_label }}
+                            {% if listener.diploma_delivery == 'mail' and listener.delivery_address %}
+                                <div style="font-size: 0.8rem; color: #475569; margin-top: 0.2rem;">
+                                    Адрес: {{ listener.delivery_address }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Базовое профессиональное образование (ФИС ФРДО) -->
+                <div style="background: #ffffff; border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 0.85rem 1rem; margin-bottom: 0.85rem;">
+                    <div style="font-size: 0.78rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.4rem;">
+                        🎓 Базовое профессиональное образование (ФИС ФРДО)
+                    </div>
+                    <div style="font-size: 0.9rem; color: var(--text-main);">
+                        <strong>Уровень:</strong> {{ person.education_level }}<br>
+                        <strong>Учебное заведение:</strong> {{ person.institute_name }}<br>
+                        {% if person.diploma_series_number %}
+                            <strong>Диплом:</strong> {{ person.diploma_series_number }}
+                            {% if person.diploma_date %} от {{ person.diploma_date.strftime('%d.%m.%Y') }}{% endif %}
+                        {% endif %}
+                        {% if person.diploma_lastname %}
+                            | <strong>Фамилия в дипломе:</strong> {{ person.diploma_lastname }}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Сведения о квалификации по пожарной безопасности (если заполнено) -->
+                {% if person.fire_safety_document_type %}
+                    <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: var(--radius-sm); padding: 0.85rem 1rem; margin-bottom: 0.85rem;">
+                        <div style="font-size: 0.78rem; font-weight: 700; color: #c2410c; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.4rem;">
+                            🚒 Профильное образование в области пожарной безопасности
+                        </div>
+                        <div style="font-size: 0.9rem; color: #7c2d12;">
+                            <strong>Документ:</strong> {{ FIRE_DOCUMENT_LABELS.get(person.fire_safety_document_type, person.fire_safety_document_type) }}<br>
+                            {% if person.fire_institution %}<strong>Организация:</strong> {{ person.fire_institution }}<br>{% endif %}
+                            {% if person.fire_series or person.fire_number %}
+                                <strong>Реквизиты:</strong> {{ person.fire_series or '' }} {{ person.fire_number or '' }}
+                                {% if person.fire_date %} от {{ person.fire_date.strftime('%d.%m.%Y') }}{% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Выбранные программы и сроки -->
+                <div class="courses-box">
+                    <h4>Выбранные программы обучения и сроки</h4>
+                    {% if listener.courses %}
+                        {% for course in listener.courses %}
+                            <div class="course-item">
+                                <div>
+                                    <strong>{{ course.program.title if course.program else 'Программа обучения' }}</strong>
+                                    {% if course.program and course.program.hours %}
+                                        <span style="font-size: 0.8rem; color: var(--text-muted);">({{ course.program.hours }} ч.)</span>
+                                    {% endif %}
+                                </div>
+                                <div class="course-dates">
+                                    {{ course.start_date.strftime('%d.%m.%Y') if course.start_date else '—' }} &ndash; {{ course.end_date.strftime('%d.%m.%Y') if course.end_date else '—' }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div style="color: var(--text-muted); font-size: 0.85rem;">Программы не назначены.</div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div style="color: var(--text-muted); padding: 1rem 0;">Слушатели не указаны.</div>
+    {% endif %}
+</div>
+
+<!-- 4. Служебная информация для администратора -->
+<div class="detail-card" style="background: #f8fafc;">
+    <div class="detail-card-header">
+        <h2 style="font-size: 1rem; color: #475569;">⚙️ Служебная ссылка заявителя</h2>
+    </div>
+
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.65rem;">
+        Если организация обратилась с просьбой восстановить доступ к ранее поданной заявке для прикрепления скана или повторного скачивания бланка, вы можете скопировать прямую ссылку:
+    </p>
+
+    <div class="token-copy-box">
+        <span style="color: var(--text-muted);">Ссылка:</span>
+        <span id="applicantLink">{{ request.host_url.rstrip('/') }}{{ url_for('apply.status_view', token=application.secret_token) }}</span>
+        <button type="button" class="btn-copy" onclick="copyApplicantLink()">Скопировать</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyApplicantLink() {
+    const text = document.getElementById('applicantLink').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Ссылка на заявку скопирована в буфер обмена!');
+    }).catch(err => {
+        console.error('Ошибка копирования:', err);
+    });
+}
+</script>
+{% endblock %}

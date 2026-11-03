@@ -16,12 +16,18 @@ def create_app(config_class=Config):
     csrf.init_app(flask_app)
     migrate.init_app(flask_app, db)
 
+    # Поддержка работы за обратным прокси (Apache ProxyPass)
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
     # Регистрация Blueprints
     from app.blueprints.main import main_bp
     from app.blueprints.apply import apply_bp
+    from app.blueprints.internal import internal_bp
 
     flask_app.register_blueprint(main_bp)
     flask_app.register_blueprint(apply_bp)
+    flask_app.register_blueprint(internal_bp)
 
     # Автоматическое создание таблиц и первичное наполнение программами
     with flask_app.app_context():

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Реестр заявок{% endblock %} — Портал сотрудника УМЦ ГОЧС и ПБ</title>
+
+    <!-- Стили приложения и служебного портала -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/internal.css') }}">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Верхняя статусная панель внутренней сети -->
+    <div class="staff-topbar">
+        <div class="staff-host-badge">
+            contractmaker.umcgochs.local (Внутренний контур)
+        </div>
+        <div class="staff-nav-links">
+            <a href="{{ url_for('internal.applications_list') }}" class="{% if request.endpoint.startswith('internal.') %}active{% endif %}">
+                📋 Реестр заявок
+            </a>
+            <a href="{{ url_for('main.index') }}" target="_blank" title="Открыть публичную страницу выбора обучения">
+                🌐 Форма подачи заявок ↗
+            </a>
+        </div>
+    </div>
+
+    <!-- Основной брендовый хедер -->
+    <header class="header-banner">
+        <div class="header-content">
+            <a href="{{ url_for('internal.applications_list') }}" class="header-brand">
+                <img src="{{ url_for('static', filename='images/logo.webp') }}" alt="Логотип УМЦ ГОЧС и ПБ" class="header-logo">
+                <div class="header-titles">
+                    <h1>ГБУ ДПО «УМЦ ГОЧС и ПБ Иркутской области»</h1>
+                    <p>Автоматизированная система приема и обработки заявок • Рабочее место сотрудника</p>
+                </div>
+            </a>
+            {% block header_actions %}{% endblock %}
+        </div>
+    </header>
+
+    <main class="container" style="max-width: 1300px; padding: 1.5rem 1rem;">
+        <!-- Флеш-сообщения -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer style="margin-top: auto; padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--border-light); background: #ffffff;">
+        ГБУ ДПО «Учебно-методический центр по ГО, ЧС и ПБ Иркутской области» &copy; 2026. Внутренний реестр заявок.
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

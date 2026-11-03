@@ -1,0 +1,215 @@
+{% extends "internal/base_internal.html" %}
+
+{% block title %}Реестр всех заявок{% endblock %}
+
+{% block content %}
+<div class="content-header" style="margin-bottom: 1.25rem;">
+    <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main);">Реестр поступивших заявок на обучение</h2>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Просмотр списка организаций, детальных сведений о слушателях, выгрузка бланков Word и проверка прикрепленных сканов.</p>
+</div>
+
+<!-- Сводные аналитические карточки -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-label">Всего заявок</span>
+        <span class="stat-val">{{ stats.total }}</span>
+    </div>
+    <div class="stat-card stat-submitted">
+        <span class="stat-label">На проверке (со сканом)</span>
+        <span class="stat-val">{{ stats.submitted }}</span>
+    </div>
+    <div class="stat-card stat-draft">
+        <span class="stat-label">Черновики (без скана)</span>
+        <span class="stat-val">{{ stats.draft }}</span>
+    </div>
+    <div class="stat-card stat-in_review">
+        <span class="stat-label">В обработке</span>
+        <span class="stat-val">{{ stats.in_review }}</span>
+    </div>
+    <div class="stat-card stat-accepted">
+        <span class="stat-label">Всего слушателей</span>
+        <span class="stat-val">{{ stats.total_students }}</span>
+    </div>
+</div>
+
+<!-- Форма поиска и фильтрации -->
+<div class="filter-card">
+    <form method="GET" action="{{ url_for('internal.applications_list') }}">
+        <div class="search-input-wrapper">
+            <input type="text" name="q" value="{{ current_filters.q }}" placeholder="🔍 Поиск по номеру (напр. ГО-Д-2026-...), названию организации, ИНН, ФИО контактного лица или слушателя...">
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="filter_status">Статус заявки</label>
+                <select name="status" id="filter_status">
+                    <option value="">Все статусы</option>
+                    {% for s_val, s_lbl in statuses %}
+                        <option value="{{ s_val }}" {% if current_filters.status == s_val %}selected{% endif %}>{{ s_lbl }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filter_direction">Направление обучения</label>
+                <select name="direction" id="filter_direction">
+                    <option value="">Все направления</option>
+                    {% for d_val, d_lbl in directions %}
+                        <option value="{{ d_val }}" {% if current_filters.direction == d_val %}selected{% endif %}>{{ d_lbl }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filter_study_form">Форма обучения</label>
+                <select name="study_form" id="filter_study_form">
+                    <option value="">Все формы</option>
+                    {% for f_val, f_lbl in study_forms %}
+                        <option value="{{ f_val }}" {% if current_filters.study_form == f_val %}selected{% endif %}>{{ f_lbl }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filter_scan">Скан заявления</label>
+                <select name="scan" id="filter_scan">
+                    <option value="">Все</option>
+                    <option value="with_scan" {% if current_filters.scan == 'with_scan' %}selected{% endif %}>Только со сканом</option>
+                    <option value="no_scan" {% if current_filters.scan == 'no_scan' %}selected{% endif %}>Без скана</option>
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn-filter">Найти</button>
+                {% if current_filters.q or current_filters.status or current_filters.direction or current_filters.study_form or current_filters.scan %}
+                    <a href="{{ url_for('internal.applications_list') }}" class="btn-reset" title="Сбросить фильтры">Сброс</a>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Таблица реестра заявок -->
+<div class="table-responsive">
+    <table class="staff-table">
+        <thead>
+            <tr>
+                <th>Номер заявки</th>
+                <th>Дата создания</th>
+                <th>Организация</th>
+                <th>Направление / Форма</th>
+                <th style="text-align: center;">Слушатели</th>
+                <th>Статус</th>
+                <th>Скан</th>
+                <th style="text-align: right;">Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if applications %}
+                {% for app in applications %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('internal.application_detail', app_id=app.id) }}" class="app-number-link">
+                                {{ app.app_number }}
+                            </a>
+                        </td>
+                        <td>
+                            <span style="white-space: nowrap; font-size: 0.85rem; color: #475569;">
+                                {{ app.created_at.strftime('%d.%m.%Y') if app.created_at else '—' }}
+                            </span>
+                            <span style="display: block; font-size: 0.75rem; color: #94a3b8;">
+                                {{ app.created_at.strftime('%H:%M') if app.created_at else '' }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="org-short">{{ app.org_short_name }}</span>
+                            <span class="org-sub">ИНН: {{ app.inn }}</span>
+                        </td>
+                        <td>
+                            <span class="badge-direction">{{ app.direction_label }}</span>
+                            <span style="display: block; font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">
+                                {{ app.study_form_label }}
+                            </span>
+                        </td>
+                        <td style="text-align: center; font-weight: 700; color: #334155;">
+                            {{ app.listeners|length }}
+                        </td>
+                        <td>
+                            <span class="status-badge badge-{{ app.status }}">
+                                {{ app.status_label }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if app.signed_scan_path %}
+                                <a href="{{ url_for('internal.view_application_scan', app_id=app.id) }}" target="_blank" class="scan-pill" title="Открыть скан в новой вкладке">
+                                    📄 Скан
+                                </a>
+                            {% else %}
+                                <span style="color: #cbd5e1; font-weight: bold;">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            <div class="action-btns" style="justify-content: flex-end;">
+                                <a href="{{ url_for('internal.application_detail', app_id=app.id) }}" class="btn-sm-action" title="Просмотреть карточку заявки">
+                                    Открыть
+                                </a>
+                                <a href="{{ url_for('internal.download_application_docx', app_id=app.id) }}" class="btn-sm-action btn-docx" title="Скачать заявление в формате .docx">
+                                    DOCX
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📂</div>
+                        <p style="font-size: 1.05rem; font-weight: 600; color: #475569;">Заявок по заданным критериям не найдено</p>
+                        <p style="font-size: 0.88rem; margin-top: 0.25rem;">Попробуйте изменить поисковый запрос или сбросить фильтры.</p>
+                        {% if current_filters.q or current_filters.status or current_filters.direction or current_filters.study_form or current_filters.scan %}
+                            <div style="margin-top: 1rem;">
+                                <a href="{{ url_for('internal.applications_list') }}" class="btn-reset">Сбросить фильтры</a>
+                            </div>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Пагинация -->
+{% if pagination.pages > 1 %}
+    <div class="pagination-container">
+        <div class="pagination-info">
+            Показано <strong>{{ applications|length }}</strong> из <strong>{{ pagination.total }}</strong> заявок (Страница {{ pagination.page }} из {{ pagination.pages }})
+        </div>
+
+        <div class="pagination-links">
+            <!-- Предыдущая страница -->
+            <a href="{{ url_for('internal.applications_list', page=pagination.prev_num, q=current_filters.q, status=current_filters.status, direction=current_filters.direction, study_form=current_filters.study_form, scan=current_filters.scan) if pagination.has_prev else '#' }}"
+               class="page-btn {% if not pagination.has_prev %}disabled{% endif %}">
+                &larr; Назад
+            </a>
+
+            <!-- Номера страниц -->
+            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if p %}
+                    <a href="{{ url_for('internal.applications_list', page=p, q=current_filters.q, status=current_filters.status, direction=current_filters.direction, study_form=current_filters.study_form, scan=current_filters.scan) }}"
+                       class="page-btn {% if p == pagination.page %}active{% endif %}">
+                        {{ p }}
+                    </a>
+                {% else %}
+                    <span style="color: #94a3b8; padding: 0 0.3rem;">…</span>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Следующая страница -->
+            <a href="{{ url_for('internal.applications_list', page=pagination.next_num, q=current_filters.q, status=current_filters.status, direction=current_filters.direction, study_form=current_filters.study_form, scan=current_filters.scan) if pagination.has_next else '#' }}"
+               class="page-btn {% if not pagination.has_next %}disabled{% endif %}">
+                Вперед &rarr;
+            </a>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

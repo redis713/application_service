@@ -355,81 +355,14 @@ def status_view(token: str):
 
 @apply_bp.route("/download/<token>")
 def download_docx(token: str):
+    """Генерирует и отдает Word (.docx) документ для скачивания на шаге 2."""
     application = Application.query.filter_by(secret_token=token).first_or_404()
 
-    # Собираем данные организации из заявки
-    org_data = {
-        "full_name": application.org_full_name,
-        "short_name": application.org_short_name,
-        "boss_lastname": application.boss_lastname,
-        "boss_firstname": application.boss_firstname,
-        "boss_patronymic": application.boss_patronymic,
-        "boss_position": application.boss_position,
-        "boss_authority": application.boss_authority,
-        "ogrn": application.ogrn,
-        "inn": application.inn,
-        "kpp": application.kpp or "",
-        "bank_name": application.bank_name,
-        "account_number": application.account_number,
-        "bik": application.bik,
-        "actual_address": application.actual_address,
-        "legal_address": application.legal_address,
-        "phone": application.phone,
-        "email": application.email,
-        "executor_fio": application.executor_fio,
-        "executor_position": application.executor_position,
-        "executor_phone": application.executor_phone,
-        "executor_email": application.executor_email,
-    }
-
-    # Собираем данные слушателей
-    listeners_data = []
-    for l in application.listeners:
-        p = l.person
-        courses = []
-        for c in l.courses:
-            courses.append({
-                "title": c.program.title if c.program else "",
-                "start_date": c.start_date,
-                "end_date": c.end_date,
-            })
-
-        listeners_data.append({
-            "lastname": p.lastname,
-            "firstname": p.firstname,
-            "patronymic": p.patronymic,
-            "birthdate": p.birthdate,
-            "citizenship": p.citizenship,
-            "education_level": p.education_level,
-            "institute_name": p.institute_name,
-            "diploma_series_number": p.diploma_series_number,
-            "diploma_date": p.diploma_date,
-            "diploma_lastname": p.diploma_lastname,
-            "snils": p.formatted_snils,
-            "position": l.position,
-            "phone": p.phone,
-            "email": p.email,
-            "diploma_delivery": l.diploma_delivery,
-            "delivery_address": l.delivery_address or "",
-            "fire_safety_document_type": p.fire_safety_document_type,
-            "fire_institution": p.fire_institution,
-            "fire_series": p.fire_series,
-            "fire_number": p.fire_number,
-            "fire_date": p.fire_date,
-            "courses": courses,
-        })
-
     templates_dir = current_app.config["DOCX_TEMPLATES_FOLDER"]
-    stream = DocxService.generate_docx_stream(
-        org_data=org_data,
-        listeners_data=listeners_data,
-        study_form=application.study_form,
-        direction=application.direction,
+    stream, download_filename = DocxService.generate_docx_for_application(
+        application=application,
         templates_dir=templates_dir
     )
-
-    clean_org = application.org_short_name.replace('"', '').replace("'", "").strip()
-    download_filename = f"Заявка_{application.app_number}_{clean_org}.docx"
 
     return send_file(
         stream,
