@@ -264,10 +264,10 @@ class ApplicationService:
                     app_number=app_number,
                     direction=direction,
                     study_form=study_form,
-                    status=ApplicationStatus.DRAFT.value,
+                    status=ApplicationStatus.IN_REVIEW.value,
                     # Данные организации в заявке (поддерживаем оба формата ключей)
                     org_full_name=_s(org_data.get("organization_full_name") or org_data.get("full_name")),
-                    org_short_name=_s(org_data.get("organization_short_name") or org_data.get("short_name")),
+                    org_short_name=_s(org_data.get("organization_short_name") or org_data.get("short_name")) or None,
                     inn=cls.clean_digits(org_data.get("inn")),
                     kpp=cls.clean_digits(org_data.get("kpp")),
                     ogrn=cls.clean_digits(org_data.get("ogrn")),
@@ -323,7 +323,7 @@ class ApplicationService:
             _s = cls._s
             # Обновляем организацию прямо в заявке
             application.org_full_name = _s(org_data.get("organization_full_name") or org_data.get("full_name"))
-            application.org_short_name = _s(org_data.get("organization_short_name") or org_data.get("short_name"))
+            application.org_short_name = _s(org_data.get("organization_short_name") or org_data.get("short_name")) or None
             application.inn = cls.clean_digits(org_data.get("inn"))
             application.kpp = cls.clean_digits(org_data.get("kpp"))
             application.ogrn = cls.clean_digits(org_data.get("ogrn"))
@@ -346,13 +346,12 @@ class ApplicationService:
             application.last_edited_by = "пользователь"
             application.updated_at = datetime.now(timezone.utc)
 
-            # Если заявка была подана со сканом или отправлена на доработку,
-            # изменение данных требует повторного подписания и нового скана
-            if application.status in (ApplicationStatus.SUBMITTED.value, ApplicationStatus.NEEDS_CORRECTION.value):
-                application.status = ApplicationStatus.DRAFT.value
-                application.signed_scan_filename = None
-                application.signed_scan_path = None
-                application.submitted_at = None
+            # После редактирования пользователем заявка возвращается на рассмотрение в договорной отдел
+            application.status = ApplicationStatus.IN_REVIEW.value
+            application.review_comment = None
+            application.signed_scan_filename = None
+            application.signed_scan_path = None
+            application.submitted_at = None
 
             # Удаляем старых слушателей (курсы удалятся каскадно)
             for old_listener in list(application.listeners):
@@ -493,4 +492,43 @@ class ApplicationService:
         db.session.add(attachment)
         db.session.commit()
 
+        return application
+
+    @classmethod
+    def approve_application(cls, app_id: int, reviewer: str = "договорной отдел") -> Application:
+        """Одобряет заявку договорным отделом, открывая заявителю возможность прикрепить скан."""
+        application = Application.query.get(app_id)
+        if not application:
+            raise ValueError(f"Заявка с ID #{app_id} не найдена.")
+        application.status = ApplicationStatus.APPROVED.value
+        application.reviewed_by = reviewer
+        application.reviewed_at = datetime.now(timezone.utc)
+        db.session.commit()
+        return application
+
+    @classmethod
+    def return_for_correction(cls, app_id: int, comment: str, reviewer: str = "договорной отдел") -> Application:
+        """Возвращает заявку заявителю на доработку с замечаниями договорного отдела."""
+        application = Application.query.get(app_id)
+        if not application:
+            raise ValueError(f"Заявка с ID #{app_id} не найдена.")
+        application.status = ApplicationStatus.NEEDS_CORRECTION.value
+        application.review_comment = comment.strip()
+        application.reviewed_by = reviewer
+        application.reviewed_at = datetime.now(timezone.utc)
+        db.session.commit()
+        return application
+
+    @classmethod
+    def reject_application(cls, app_id: int, reason: Optional[str] = None, reviewer: str = "договорной отдел") -> Application:
+        """Отклоняет заявку договорным отделом."""
+        application = Application.query.get(app_id)
+        if not application:
+            raise ValueError(f"Заявка с ID #{app_id} не найдена.")
+        application.status = ApplicationStatus.REJECTED.value
+        if reason:
+            application.review_comment = reason.strip()
+        application.reviewed_by = reviewer
+        application.reviewed_at = datetime.now(timezone.utc)
+        db.session.commit()
         return application

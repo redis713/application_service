@@ -33,22 +33,24 @@ class TrainingDirection(str, enum.Enum):
 
 
 class ApplicationStatus(str, enum.Enum):
-    DRAFT = "draft"                     # Черновик (документ сформирован, ожидает подписания и скана)
-    SUBMITTED = "submitted"             # Заявка подана со сканом, ожидает проверки методистом
-    IN_REVIEW = "in_review"             # В обработке
+    IN_REVIEW = "in_review"             # Принята в работу, ожидает рассмотрения договорным отделом
+    APPROVED = "approved"               # Одобрена договорным отделом (ожидает загрузки скана)
+    NEEDS_CORRECTION = "correction"     # Требует доработки (возвращена с замечаниями)
+    SUBMITTED = "submitted"             # Скан заявления прикреплен, передана в учебный отдел
     ACCEPTED = "accepted"               # Принята (включена в приказ на зачисление)
-    NEEDS_CORRECTION = "correction"     # Требует исправления/уточнения данных
     REJECTED = "rejected"               # Отклонена
+    DRAFT = "draft"                     # Черновик (для обратной совместимости)
 
     @classmethod
     def label(cls, value: str) -> str:
         labels = {
-            cls.DRAFT: "Черновик (ожидает скан с подписью)",
-            cls.SUBMITTED: "Подана (на проверке)",
-            cls.IN_REVIEW: "В обработке методистом",
+            cls.IN_REVIEW: "На рассмотрении договорным отделом",
+            cls.APPROVED: "Одобрена (ожидает скан)",
+            cls.NEEDS_CORRECTION: "Требует доработки",
+            cls.SUBMITTED: "Скан прикреплен (на зачислении)",
             cls.ACCEPTED: "Принята",
-            cls.NEEDS_CORRECTION: "Требует уточнений",
             cls.REJECTED: "Отклонена",
+            cls.DRAFT: "На рассмотрении договорным отделом",
         }
         return labels.get(value, value)
 

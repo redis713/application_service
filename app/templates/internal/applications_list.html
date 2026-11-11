@@ -14,17 +14,21 @@
         <span class="stat-label">Всего заявок</span>
         <span class="stat-val">{{ stats.total }}</span>
     </div>
-    <div class="stat-card stat-submitted">
-        <span class="stat-label">На проверке (со сканом)</span>
-        <span class="stat-val">{{ stats.submitted }}</span>
+    <div class="stat-card stat-in_review">
+        <span class="stat-label">На рассмотрении</span>
+        <span class="stat-val">{{ stats.in_review }}</span>
+    </div>
+    <div class="stat-card" style="border-left: 4px solid #10b981;">
+        <span class="stat-label">Одобрены (ждут скан)</span>
+        <span class="stat-val" style="color: #059669;">{{ stats.approved }}</span>
     </div>
     <div class="stat-card stat-draft">
-        <span class="stat-label">Черновики (без скана)</span>
-        <span class="stat-val">{{ stats.draft }}</span>
+        <span class="stat-label">На доработке</span>
+        <span class="stat-val" style="color: #d97706;">{{ stats.correction }}</span>
     </div>
-    <div class="stat-card stat-in_review">
-        <span class="stat-label">В обработке</span>
-        <span class="stat-val">{{ stats.in_review }}</span>
+    <div class="stat-card stat-submitted">
+        <span class="stat-label">Скан прикреплен</span>
+        <span class="stat-val">{{ stats.submitted }}</span>
     </div>
     <div class="stat-card stat-accepted">
         <span class="stat-label">Всего слушателей</span>

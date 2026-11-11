@@ -36,6 +36,28 @@ def get_program_choices(direction: str, study_form: str):
     return choices
 
 
+def is_fire_safety_required(direction: str, study_form: str, fixed_program=None, form=None) -> bool:
+    """
+    Проверяет, требуется ли для данного направления и формы обучения предоставлять
+    сведения о профильном пожарном образовании слушателей.
+    Не требуется в очно-заочной форме для программы переподготовки
+    'Специалист по пожарной профилактике' (250 часов).
+    """
+    if direction != TrainingDirection.FIRE.value:
+        return False
+
+    if study_form == StudyForm.OCHNO.value:
+        if fixed_program:
+            if fixed_program.code == "fulltime_fire_cat31" or (fixed_program.hours == 250 and "профилактик" in (fixed_program.title or "").lower()):
+                return False
+        if form and hasattr(form, "students"):
+            for s in form.students:
+                for c in s.student_categories:
+                    if c.category.data == "fulltime_fire_cat31":
+                        return False
+    return True
+
+
 def add_field_error(field, message: str):
     """Безопасно добавляет ошибку валидации к полю формы WTForms."""
     field.errors = list(field.errors or ()) + [message]
@@ -168,9 +190,11 @@ def form_view(study_form: str, direction: str):
             if fixed_program and not cat_form.category.data:
                 cat_form.category.data = fixed_program.code
 
+    requires_fire_doc = is_fire_safety_required(direction, study_form, fixed_program, form)
+
     if request.method == "POST":
         is_valid = form.validate_on_submit()
-        if direction == TrainingDirection.FIRE.value:
+        if requires_fire_doc:
             for s_form in form.students:
                 if not s_form.fire_safety_document_type.data:
                     add_field_error(s_form.fire_safety_document_type, "Выберите основание пожарного образования.")
@@ -199,7 +223,7 @@ def form_view(study_form: str, direction: str):
                             if not c.get("category"):
                                 c["category"] = fixed_program.code
 
-                # Сохраняем черновик заявки
+                # Сохраняем заявку со статусом 'На рассмотрении договорным отделом'
                 application = ApplicationService.create_application_draft(
                     org_data=org_data,
                     students_data=students_data,
@@ -207,8 +231,8 @@ def form_view(study_form: str, direction: str):
                     study_form=study_form
                 )
 
-                flash(f"Заявка № {application.app_number} успешно сформирована!", "success")
-                return redirect(url_for("apply.status_view", token=application.secret_token, download="1"))
+                flash(f"Заявка № {application.app_number} успешно принята в работу и ожидает рассмотрения договорным отделом!", "success")
+                return redirect(url_for("apply.status_view", token=application.secret_token))
 
             except Exception as e:
                 current_app.logger.error(f"Error creating application draft: {e}", exc_info=True)
@@ -223,7 +247,8 @@ def form_view(study_form: str, direction: str):
         study_form_label=StudyForm.label(study_form),
         direction_label=TrainingDirection.label(direction),
         program_choices=choices,
-        fixed_program=fixed_program
+        fixed_program=fixed_program,
+        show_fire_safety_fields=requires_fire_doc
     )
 
 
@@ -254,14 +279,17 @@ def edit_view(token: str):
         if fixed_tuple not in choices:
             choices.append(fixed_tuple)
 
+    requires_fire_doc = is_fire_safety_required(application.direction, application.study_form, fixed_program, None)
+
     if request.method == "POST":
         form = ApplicationForm()
         for student_form in form.students:
             for cat_form in student_form.student_categories:
                 cat_form.category.choices = choices
 
+        requires_fire_doc = is_fire_safety_required(application.direction, application.study_form, fixed_program, form)
         is_valid = form.validate_on_submit()
-        if application.direction == TrainingDirection.FIRE.value:
+        if requires_fire_doc:
             for s_form in form.students:
                 if not s_form.fire_safety_document_type.data:
                     add_field_error(s_form.fire_safety_document_type, "Выберите основание пожарного образования.")
@@ -293,8 +321,8 @@ def edit_view(token: str):
                     org_data=org_data,
                     students_data=students_data
                 )
-                flash(f"Заявка № {application.app_number} успешно обновлена! Сформирован обновленный бланк.", "success")
-                return redirect(url_for("apply.status_view", token=token, download="1"))
+                flash(f"Заявка № {application.app_number} успешно обновлена и направлена на повторное рассмотрение в договорной отдел!", "success")
+                return redirect(url_for("apply.status_view", token=token))
             except Exception as e:
                 current_app.logger.error(f"Error updating application {token}: {e}", exc_info=True)
                 flash(f"Ошибка при обновлении заявки: {str(e)}", "danger")
@@ -316,7 +344,8 @@ def edit_view(token: str):
         study_form_label=StudyForm.label(application.study_form),
         direction_label=TrainingDirection.label(application.direction),
         program_choices=choices,
-        fixed_program=fixed_program
+        fixed_program=fixed_program,
+        show_fire_safety_fields=requires_fire_doc
     )
 
 
@@ -324,24 +353,29 @@ def edit_view(token: str):
 def status_view(token: str):
     application = Application.query.filter_by(secret_token=token).first_or_404()
 
-    # Если скан уже прикреплен и заявка отправлена или одобрена, перенаправляем на карточку успеха
-    if application.status in (ApplicationStatus.SUBMITTED.value, ApplicationStatus.ACCEPTED.value, ApplicationStatus.IN_REVIEW.value):
+    # Если скан уже прикреплен и заявка окончательно передана в учебный отдел
+    if application.status in (ApplicationStatus.SUBMITTED.value, ApplicationStatus.ACCEPTED.value):
         return redirect(url_for("apply.success_view", token=token))
 
     upload_form = ScanUploadForm()
 
-    if upload_form.validate_on_submit():
-        try:
-            ApplicationService.attach_signed_scan(
-                token=token,
-                file_storage=upload_form.scan_file.data,
-                upload_folder=current_app.config["SCANS_FOLDER"]
-            )
-            flash("Скан заявления успешно прикреплен! Ваша заявка передана в учебный отдел на обработку.", "success")
-            return redirect(url_for("apply.success_view", token=token))
-        except Exception as e:
-            current_app.logger.error(f"Error attaching scan for application {token}: {e}", exc_info=True)
-            flash(f"Ошибка при загрузке скана: {str(e)}", "danger")
+    if request.method == "POST":
+        if application.status != ApplicationStatus.APPROVED.value:
+            flash("Прикрепление скан-копии станет доступно после того, как договорной отдел проверит и одобрит заявку.", "warning")
+            return redirect(url_for("apply.status_view", token=token))
+
+        if upload_form.validate_on_submit():
+            try:
+                ApplicationService.attach_signed_scan(
+                    token=token,
+                    file_storage=upload_form.scan_file.data,
+                    upload_folder=current_app.config["SCANS_FOLDER"]
+                )
+                flash("Скан заявления успешно прикреплен! Ваша заявка передана в учебный отдел на обработку.", "success")
+                return redirect(url_for("apply.success_view", token=token))
+            except Exception as e:
+                current_app.logger.error(f"Error attaching scan for application {token}: {e}", exc_info=True)
+                flash(f"Ошибка при загрузке скана: {str(e)}", "danger")
 
     auto_download = request.args.get("download") == "1"
 
@@ -349,7 +383,8 @@ def status_view(token: str):
         "apply/upload_scan.html",
         application=application,
         upload_form=upload_form,
-        auto_download=auto_download
+        auto_download=auto_download,
+        can_upload_scan=(application.status == ApplicationStatus.APPROVED.value)
     )
 
 

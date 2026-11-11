@@ -1,46 +1,81 @@
 {% extends "base.html" %}
 
-{% block title %}Заявка {{ application.app_number }} — Скачивание и прикрепление скана{% endblock %}
+{% block title %}Заявка {{ application.app_number }} — Статус рассмотрения{% endblock %}
 
 {% block content %}
+<!-- МАСТЕР ШАГОВ -->
 <div class="steps-wizard">
     <a href="{{ url_for('apply.edit_view', token=application.secret_token) }}" class="wizard-step completed" style="text-decoration: none;" title="Нажмите, чтобы вернуться к редактированию данных">
         <span class="circle">✓</span>
-        <span>1. Данные заявки (изменить)</span>
+        <span>1. Данные заявки</span>
     </a>
-    <div class="wizard-step active">
-        <span class="circle">2</span>
-        <span>Скачивание бланка</span>
-    </div>
-    <div class="wizard-step active">
-        <span class="circle">3</span>
-        <span>Прикрепление скана с печатью</span>
-    </div>
+
+    {% if application.status == 'approved' %}
+        <div class="wizard-step completed">
+            <span class="circle">✓</span>
+            <span>2. Договорной отдел (Одобрено)</span>
+        </div>
+        <div class="wizard-step active">
+            <span class="circle">3</span>
+            <span>Прикрепление скана с печатью</span>
+        </div>
+    {% elif application.status == 'correction' %}
+        <div class="wizard-step active" style="border-color: #f59e0b;">
+            <span class="circle" style="background: #f59e0b; color: #fff;">⚠️</span>
+            <span style="color: #b45309; font-weight: 700;">2. Требуется доработка</span>
+        </div>
+        <div class="wizard-step" style="opacity: 0.5;">
+            <span class="circle">3</span>
+            <span>Прикрепление скана (после одобрения)</span>
+        </div>
+    {% else %}
+        <!-- in_review / draft -->
+        <div class="wizard-step active">
+            <span class="circle">2</span>
+            <span>Рассмотрение договорным отделом</span>
+        </div>
+        <div class="wizard-step" style="opacity: 0.5;">
+            <span class="circle">3</span>
+            <span>Прикрепление скана (после одобрения)</span>
+        </div>
+    {% endif %}
 </div>
 
 <div class="container-mid">
 
-    <!-- БАННЕР РЕДАКТИРОВАНИЯ (ВОЗВРАТ НА ШАГ 1) -->
-    <div style="background: #ffffff; border: 1.5px solid var(--border-light); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; box-shadow: var(--shadow-sm);">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 1.4rem;">✏️</span>
-            <div>
-                <strong style="color: var(--text-main); font-size: 0.95rem;">Нашли опечатку или нужно изменить данные?</strong>
-                <p style="margin: 0; color: var(--text-muted); font-size: 0.85rem;">Вы можете вернуться на 1-й шаг, исправить реквизиты или список слушателей и сформировать обновленный бланк.</p>
-            </div>
+    <!-- КАРТОЧКА ПЕРСОНАЛЬНОЙ ССЫЛКИ-ТОКЕНА ДЛЯ КОПИРОВАНИЯ -->
+    <div style="background: #ffffff; border: 1.5px solid #3b82f6; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+            <span style="font-size: 1.35rem;">🔗</span>
+            <strong style="color: #1e3a8a; font-size: 1.05rem;">Ваша персональная ссылка на заявку (сохраните её)</strong>
         </div>
-        <a href="{{ url_for('apply.edit_view', token=application.secret_token) }}" class="btn-outline-action">
-            ← Редактировать заявку
-        </a>
+        <p style="color: #334155; font-size: 0.9rem; line-height: 1.5; margin: 0 0 12px 0;">
+            Скопируйте эту ссылку или добавьте страницу в закладки. По ней вы всегда можете вернуться к заявке, отследить решение договорного отдела, прикрепить скан или внести исправления в любое удобное время:
+        </p>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="status-token-link" readonly 
+                   value="{{ url_for('apply.status_view', token=application.secret_token, _external=True) }}"
+                   style="flex: 1; min-width: 280px; padding: 11px 14px; font-size: 0.92rem; border: 1.5px solid #93c5fd; border-radius: 8px; background: #f8fafc; color: #0f172a; font-family: monospace; cursor: text;"
+                   onclick="this.select();">
+            <button type="button" id="copy-btn" onclick="copyStatusTokenLink()" 
+                    style="padding: 11px 22px; background: #2563eb; color: #ffffff; border: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: background 0.2s; white-space: nowrap;">
+                📋 Скопировать ссылку
+            </button>
+        </div>
+        <div id="copy-status-msg" style="display: none; color: #15803d; font-size: 0.88rem; font-weight: 600; margin-top: 8px;">
+            ✓ Ссылка скопирована в буфер обмена!
+        </div>
     </div>
 
+    <!-- ОСНОВНАЯ КАРТОЧКА СТАТУСА -->
     <div class="action-card">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+        <!-- Шапка заявки -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 20px; gap: 12px;">
             <div>
-                <span class="badge-status {% if application.status == 'correction' %}badge-warning{% else %}badge-draft{% endif %}">{{ application.status_label }}</span>
-                <h2 style="margin: 8px 0 4px 0; font-size: 1.8rem;">Заявка {{ application.app_number }}</h2>
+                <span class="badge-status badge-{{ application.status }}">{{ application.status_label }}</span>
+                <h2 style="margin: 8px 0 4px 0; font-size: 1.8rem; color: var(--text-main);">Заявка № {{ application.app_number }}</h2>
                 <p style="margin: 0; color: #64748b; font-size: 0.95rem;">
-                    Организация: <strong>{{ application.organization.short_name }}</strong> (ИНН: {{ application.organization.inn }})
+                    Организация: <strong>{{ application.short_name }}</strong> (ИНН: {{ application.inn }})
                 </p>
             </div>
             <div style="text-align: right;">
@@ -49,80 +84,214 @@
             </div>
         </div>
 
-        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
-            <div>
-                <h3 style="margin: 0 0 5px 0; color: #1e3a8a;">Шаг 2. Скачайте официальный бланк заявления</h3>
-                <p style="margin: 0; color: #3b82f6; font-size: 0.9rem;">
-                    Документ Word сформирован по утвержденной форме УМЦ со всеми реквизитами
+        <!-- 1. СОСТОЯНИЕ: НА РАССМОТРЕНИИ ДОГОВОРНЫМ ОТДЕЛОМ (in_review / draft) -->
+        {% if application.status in ['in_review', 'draft'] %}
+            <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: flex-start; gap: 16px;">
+                    <span style="font-size: 2.2rem; line-height: 1;">⏳</span>
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0 0 8px 0; color: #1e40af; font-size: 1.25rem;">
+                            Заявка принята в работу и ожидает рассмотрения договорным отделом
+                        </h3>
+                        <p style="margin: 0 0 10px 0; color: #1e3a8a; font-size: 0.95rem; line-height: 1.55;">
+                            Специалисты договорного отдела проверяют указанные вами реквизиты направляющей организации и данные слушателей на соответствие установленным требованиям.
+                        </p>
+                        <p style="margin: 0; color: #2563eb; font-size: 0.9rem; line-height: 1.5;">
+                            ℹ️ <strong>Что делать дальше?</strong> Дождитесь проверки. Как только заявка будет одобрена договорным отделом, на этой странице появится подтверждение и станет доступна загрузка скан-копии подписанного заявления с печатью. Вы можете сохранить персональную ссылку выше и вернуться по ней позже.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;">
+                <a href="{{ url_for('apply.download_docx', token=application.secret_token) }}" class="btn-primary-action" style="padding: 12px 22px; font-size: 0.95rem;">
+                    📥 Скачать сформированное заявление (.docx)
+                </a>
+                <a href="{{ url_for('apply.edit_view', token=application.secret_token) }}" class="btn-outline-action" style="padding: 12px 22px; font-size: 0.95rem;">
+                    ✏️ Редактировать заявку
+                </a>
+            </div>
+
+            <!-- Заглушка этапа скана до одобрения -->
+            <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 10px; padding: 22px; color: #64748b; text-align: center;">
+                <div style="font-size: 1.8rem; margin-bottom: 6px;">🔒</div>
+                <h4 style="margin: 0 0 6px 0; color: #475569; font-size: 1.05rem;">Шаг 3. Прикрепление скан-копии заявления с печатью</h4>
+                <p style="margin: 0; font-size: 0.9rem; max-width: 580px; margin: 0 auto;">
+                    Форма загрузки скана станет активна сразу после того, как договорной отдел проверит и одобрит вашу заявку.
                 </p>
             </div>
-            <a href="{{ url_for('apply.download_docx', token=application.secret_token) }}" class="btn-primary-action" id="download-link">
-                📥 Скачать заявление (.docx)
-            </a>
-        </div>
 
-        <div class="instruction-list">
-            <h3 style="margin-top: 0; color: var(--primary-color);">Порядок действий для завершения подачи заявки:</h3>
-            <ol>
-                <li><strong>Скачайте и распечатайте</strong> сформированное заявление на бланке выше.</li>
-                <li><strong>Передайте на подпись:</strong> руководитель организации должен поставить личную подпись.</li>
-                <li><strong>Поставьте печать</strong> организации (при наличии).</li>
-                <li><strong>Отсканируйте</strong> подписанное заявление (формат PDF или четкое фото/скан JPG, PNG).</li>
-                <li><strong>Прикрепите скан ниже</strong> и нажмите «Отправить заявку в учебный центр».</li>
-            </ol>
-        </div>
-
-        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-
-        <!-- ФОРМА ПРИКРЕПЛЕНИЯ СКАНА -->
-        <div>
-            <h3 style="color: var(--primary-color); margin-bottom: 15px;">Шаг 3. Прикрепление скан-копии с печатью</h3>
-
-            <form method="post" enctype="multipart/form-data">
-                {{ upload_form.hidden_tag() }}
-
-                <div class="form-group {% if upload_form.scan_file.errors %}has-error{% endif %}" style="margin-bottom: 25px;">
-                    <label style="font-weight: 700; font-size: 1rem; color: #334155;">
-                        {{ upload_form.scan_file.label }}
-                    </label>
-                    <div style="margin-top: 8px;">
-                        {{ upload_form.scan_file(class="form-control", style="padding: 12px; height: auto;") }}
+        <!-- 2. СОСТОЯНИЕ: ОДОБРЕНА ДОГОВОРНЫМ ОТДЕЛОМ (approved) -->
+        {% elif application.status == 'approved' %}
+            <div style="background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: flex-start; gap: 16px;">
+                    <span style="font-size: 2.2rem; line-height: 1;">✅</span>
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0 0 8px 0; color: #065f46; font-size: 1.25rem;">
+                            Заявка успешно одобрена договорным отделом!
+                        </h3>
+                        <p style="margin: 0 0 10px 0; color: #047857; font-size: 0.95rem; line-height: 1.55;">
+                            Договорной отдел проверил все реквизиты и согласовал заявку на обучение. Теперь вы можете скачать официальный бланк заявления, подписать его у руководителя организации, заверить печатью и прикрепить скан ниже.
+                        </p>
                     </div>
-                    <small style="color: #64748b; display: block; margin-top: 6px;">
-                        Поддерживаются файлы: PDF, JPG, PNG, TIFF. Максимальный размер: 30 МБ.
-                    </small>
-                    {% for err in upload_form.scan_file.errors %}
-                        <div class="error-message" style="margin-top: 5px;">{{ err }}</div>
-                    {% endfor %}
                 </div>
+            </div>
 
-                <div style="display: flex; justify-content: flex-end;">
-                    <button type="submit" class="btn-success-action" style="font-size: 1.1rem; padding: 15px 32px;">
-                        ✓ Отправить подписанную заявку в УМЦ
-                    </button>
+            <!-- БЛОК СКАЧИВАНИЯ БЛАНКА -->
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; margin-bottom: 24px;">
+                <div>
+                    <h3 style="margin: 0 0 5px 0; color: #166534; font-size: 1.15rem;">Шаг 2. Скачайте официальный бланк заявления</h3>
+                    <p style="margin: 0; color: #15803d; font-size: 0.9rem;">
+                        Официальный документ Word (.docx) готов к печати и подписанию
+                    </p>
                 </div>
-            </form>
+                <a href="{{ url_for('apply.download_docx', token=application.secret_token) }}" class="btn-primary-action" id="download-link" style="padding: 12px 24px;">
+                    📥 Скачать заявление (.docx)
+                </a>
+            </div>
+
+            <div class="instruction-list" style="margin-bottom: 25px;">
+                <h3 style="margin-top: 0; color: var(--primary-color);">Порядок действий для завершения подачи заявки:</h3>
+                <ol>
+                    <li><strong>Скачайте и распечатайте</strong> официальное заявление на бланке выше.</li>
+                    <li><strong>Передайте на подпись:</strong> руководитель организации должен поставить личную подпись.</li>
+                    <li><strong>Поставьте печать</strong> организации (при наличии).</li>
+                    <li><strong>Отсканируйте</strong> подписанное заявление (формат PDF или четкое фото/скан JPG, PNG).</li>
+                    <li><strong>Прикрепите скан ниже</strong> и нажмите «Отправить подписанную заявку в УМЦ».</li>
+                </ol>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0;">
+
+            <!-- АКТИВНАЯ ФОРМА ПРИКРЕПЛЕНИЯ СКАНА -->
+            <div>
+                <h3 style="color: var(--primary-color); margin-bottom: 15px;">Шаг 3. Прикрепление скан-копии с печатью</h3>
+
+                <form method="post" enctype="multipart/form-data">
+                    {{ upload_form.hidden_tag() }}
+
+                    <div class="form-group {% if upload_form.scan_file.errors %}has-error{% endif %}" style="margin-bottom: 25px;">
+                        <label style="font-weight: 700; font-size: 1rem; color: #334155;">
+                            {{ upload_form.scan_file.label }}
+                        </label>
+                        <div style="margin-top: 8px;">
+                            {{ upload_form.scan_file(class="form-control", style="padding: 12px; height: auto;") }}
+                        </div>
+                        <small style="color: #64748b; display: block; margin-top: 6px;">
+                            Поддерживаются файлы: PDF, JPG, PNG, TIFF. Максимальный размер: 30 МБ.
+                        </small>
+                        {% for err in upload_form.scan_file.errors %}
+                            <div class="error-message" style="margin-top: 5px;">{{ err }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <a href="{{ url_for('apply.edit_view', token=application.secret_token) }}" class="btn-outline-action" style="padding: 10px 18px; font-size: 0.9rem;">
+                            ✏️ Внести изменения в заявку
+                        </a>
+                        <button type="submit" class="btn-success-action" style="font-size: 1.1rem; padding: 15px 32px;">
+                            ✓ Отправить подписанную заявку в УМЦ
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        <!-- 3. СОСТОЯНИЕ: НА ДОРАБОТКЕ (correction) -->
+        {% elif application.status == 'correction' %}
+            <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: flex-start; gap: 16px;">
+                    <span style="font-size: 2.2rem; line-height: 1;">⚠️</span>
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0 0 8px 0; color: #92400e; font-size: 1.25rem;">
+                            Заявка возвращена договорным отделом на доработку
+                        </h3>
+                        <p style="margin: 0 0 12px 0; color: #b45309; font-size: 0.95rem; line-height: 1.55;">
+                            Договорной отдел проверил заявку и обнаружил несоответствия, которые необходимо скорректировать перед одобрением.
+                        </p>
+
+                        <!-- Блок замечаний -->
+                        <div style="background: #ffffff; border: 1.5px solid #fcd34d; border-radius: 8px; padding: 16px 18px; margin-bottom: 16px;">
+                            <div style="font-weight: 700; color: #92400e; margin-bottom: 6px; font-size: 0.95rem;">
+                                📝 Замечания договорного отдела:
+                            </div>
+                            <div style="color: #78350f; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap;">
+                                {{ application.review_comment or 'Пожалуйста, проверьте и скорректируйте реквизиты организации или сведения о слушателях.' }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <a href="{{ url_for('apply.edit_view', token=application.secret_token) }}" class="btn-primary-action" style="font-size: 1.05rem; padding: 14px 28px; background: #d97706; display: inline-flex; align-items: center; gap: 8px;">
+                                ✏️ Редактировать заявку и устранить замечания →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Заглушка этапа скана -->
+            <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 10px; padding: 22px; color: #64748b; text-align: center;">
+                <div style="font-size: 1.8rem; margin-bottom: 6px;">🔒</div>
+                <h4 style="margin: 0 0 6px 0; color: #475569; font-size: 1.05rem;">Шаг 3. Прикрепление скан-копии заявления с печатью</h4>
+                <p style="margin: 0; font-size: 0.9rem; max-width: 580px; margin: 0 auto;">
+                    Прикрепление скана станет доступно после устранения замечаний и одобрения заявки договорным отделом.
+                </p>
+            </div>
+
+        <!-- 4. ДРУГИЕ СОСТОЯНИЯ (rejected, submitted и т.д.) -->
+        {% else %}
+            <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+                Текущий статус заявки: <strong>{{ application.status_label }}</strong>.
+            </div>
+        {% endif %}
+
+        <!-- СВОДКА ДАННЫХ ЗАЯВКИ -->
+        <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            <h4 style="color: #475569; margin: 0 0 12px 0; font-size: 1rem;">Сводные данные заявки:</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 0.9rem; color: #475569;">
+                <div>
+                    <span style="color: #94a3b8; display: block; font-size: 0.8rem;">Направление:</span>
+                    <strong>{{ application.direction_label }}</strong>
+                </div>
+                <div>
+                    <span style="color: #94a3b8; display: block; font-size: 0.8rem;">Форма обучения:</span>
+                    <strong>{{ application.study_form_label }}</strong>
+                </div>
+                <div>
+                    <span style="color: #94a3b8; display: block; font-size: 0.8rem;">Руководитель:</span>
+                    <strong>{{ application.boss_full_name }}</strong>
+                </div>
+                <div>
+                    <span style="color: #94a3b8; display: block; font-size: 0.8rem;">Исполнитель:</span>
+                    <strong>{{ application.executor_fio }} ({{ application.executor_phone }})</strong>
+                </div>
+            </div>
         </div>
 
-    </div>
-
-    <!-- БЛОК С ССЫЛКОЙ ДЛЯ ВОЗВРАТА -->
-    <div style="background: #fff; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 15px 20px; color: #64748b; font-size: 0.9rem;">
-        💡 <strong>Совет:</strong> Если подписание займет время, вы можете сохранить эту ссылку и вернуться для загрузки скана позже:
-        <br>
-        <code style="background: #f1f5f9; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 6px; word-break: break-all;">
-            {{ request.url_root }}apply/status/{{ application.secret_token }}
-        </code>
     </div>
 
 </div>
 {% endblock %}
 
 {% block scripts %}
-{% if auto_download %}
 <script>
+function copyStatusTokenLink() {
+    const input = document.getElementById('status-token-link');
+    if (!input) return;
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(() => {
+        const msg = document.getElementById('copy-status-msg');
+        if (msg) {
+            msg.style.display = 'block';
+            setTimeout(() => { msg.style.display = 'none'; }, 4000);
+        }
+    }).catch(err => {
+        console.error('Ошибка копирования:', err);
+    });
+}
+
+{% if auto_download %}
 document.addEventListener("DOMContentLoaded", () => {
-    // Автоматический старт скачивания документа Word при переходе с первого шага
     setTimeout(() => {
         const downloadUrl = "{{ url_for('apply.download_docx', token=application.secret_token) }}";
         const iframe = document.createElement("iframe");
@@ -131,6 +300,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.appendChild(iframe);
     }, 500);
 });
-</script>
 {% endif %}
+</script>
 {% endblock %}

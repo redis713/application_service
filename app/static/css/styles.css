@@ -822,8 +822,32 @@ select.tomselected {
 }
 
 .badge-draft {
-    background: var(--warning-light);
-    color: var(--warning);
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+.badge-in_review {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+.badge-approved {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.badge-correction {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+.badge-warning {
+    background: #fffbeb;
+    color: #b45309;
     border: 1px solid #fde68a;
 }
 

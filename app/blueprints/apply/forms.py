@@ -148,8 +148,14 @@ class StudentForm(FlaskForm):
                 self.diploma_lastname.errors = list(self.diploma_lastname.errors or ()) + ["Укажите фамилию в дипломе"]
                 valid = False
         if self.diploma_delivery.data == "mail":
-            if not self.delivery_address.data or not self.delivery_address.data.strip():
+            addr = (self.delivery_address.data or "").strip()
+            if not addr:
                 self.delivery_address.errors = list(self.delivery_address.errors or ()) + ["Укажите почтовый адрес для отправки удостоверения."]
+                valid = False
+            elif not re.search(r"\b\d{6}\b", addr):
+                self.delivery_address.errors = list(self.delivery_address.errors or ()) + [
+                    "При доставке почтой в адресе обязательно должен быть указан 6-значный почтовый индекс (например: 664003, г. Иркутск, ул. Ленина, д. 1)."
+                ]
                 valid = False
         return valid
 
@@ -187,7 +193,7 @@ class StudentForm(FlaskForm):
 class ApplicationForm(FlaskForm):
     # Данные организации
     organization_full_name = StringField("Полное наименование организации", validators=[DataRequired(message="Укажите полное наименование организации"), Length(max=500)])
-    organization_short_name = StringField("Краткое наименование организации", validators=[DataRequired(message="Укажите краткое наименование"), Length(max=255)])
+    organization_short_name = StringField("Краткое наименование организации", validators=[Optional(), Length(max=255)])
 
     inn = StringField("ИНН", validators=[DataRequired(message="Укажите ИНН"), validate_inn, Length(max=20)])
     kpp = StringField("КПП", validators=[Optional(), validate_kpp, Length(max=20)])

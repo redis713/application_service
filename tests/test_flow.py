@@ -119,6 +119,11 @@ assert res_download.mimetype == "application/vnd.openxmlformats-officedocument.w
 print(f"   [OK] Бланк успешно скачан через GET /apply/download/{token} ({len(res_download.data)} байт)")
 
 print("\n5. Тестирование прикрепления подписанного скана (Шаг 3):")
+# В новом бизнес-процессе заявка сначала должна быть одобрена договорным отделом
+with app.app_context():
+    app_to_approve = Application.query.filter_by(secret_token=token).first()
+    ApplicationService.approve_application(app_to_approve.id)
+
 valid_pdf_content = (
     b"%PDF-1.4\n"
     b"1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"

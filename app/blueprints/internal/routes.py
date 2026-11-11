@@ -21,6 +21,7 @@ from app.constants import (
     FIRE_DOCUMENT_LABELS,
 )
 from app.services.docx_service import DocxService
+from app.services.application_service import ApplicationService
 from app.extensions import db
 
 
@@ -73,7 +74,9 @@ def applications_list():
             )
         )
 
-    if status:
+    if status == ApplicationStatus.IN_REVIEW.value:
+        query = query.filter(Application.status.in_([ApplicationStatus.IN_REVIEW.value, ApplicationStatus.DRAFT.value]))
+    elif status:
         query = query.filter(Application.status == status)
 
     if direction:
@@ -97,10 +100,11 @@ def applications_list():
     # Сводная статистика
     stats = {
         "total": Application.query.count(),
+        "in_review": Application.query.filter(Application.status.in_([ApplicationStatus.IN_REVIEW.value, ApplicationStatus.DRAFT.value])).count(),
+        "approved": Application.query.filter_by(status=ApplicationStatus.APPROVED.value).count(),
+        "correction": Application.query.filter_by(status=ApplicationStatus.NEEDS_CORRECTION.value).count(),
         "submitted": Application.query.filter_by(status=ApplicationStatus.SUBMITTED.value).count(),
-        "in_review": Application.query.filter_by(status=ApplicationStatus.IN_REVIEW.value).count(),
         "accepted": Application.query.filter_by(status=ApplicationStatus.ACCEPTED.value).count(),
-        "draft": Application.query.filter_by(status=ApplicationStatus.DRAFT.value).count(),
         "total_students": db.session.query(func.count(ApplicationListener.id)).scalar() or 0,
     }
 
@@ -217,3 +221,60 @@ def view_application_scan(app_id: int):
         as_attachment=as_attachment,
         download_name=download_name,
     )
+
+
+@internal_bp.route("/<int:app_id>/approve", methods=["POST"])
+def approve_application(app_id: int):
+    """Одобрение заявки договорным отделом."""
+    try:
+        application = ApplicationService.approve_application(app_id, reviewer="договорной отдел")
+        flash(f"Заявка № {application.app_number} успешно одобрена! Теперь заявитель может загрузить подписанный скан заявления.", "success")
+    except Exception as e:
+        current_app.logger.error(f"Error approving application #{app_id}: {e}", exc_info=True)
+        flash(f"Ошибка при одобрении заявки: {str(e)}", "danger")
+
+    return redirect(url_for("internal.application_detail", app_id=app_id))
+
+
+@internal_bp.route("/<int:app_id>/return_for_correction", methods=["POST"])
+def return_application(app_id: int):
+    """Возврат заявки заявителю на доработку с указанием замечаний."""
+    comment = (request.form.get("comment") or "").strip()
+    if not comment:
+        flash("Пожалуйста, впишите замечания к заявке перед отправкой на доработку.", "danger")
+        return redirect(url_for("internal.application_detail", app_id=app_id))
+
+    try:
+        application = ApplicationService.return_for_correction(app_id, comment=comment, reviewer="договорной отдел")
+        flash(f"Заявка № {application.app_number} возвращена на доработку заявителю с замечаниями.", "warning")
+    except Exception as e:
+        current_app.logger.error(f"Error returning application #{app_id}: {e}", exc_info=True)
+        flash(f"Ошибка при отправке заявки на доработку: {str(e)}", "danger")
+
+    return redirect(url_for("internal.application_detail", app_id=app_id))
+
+
+@internal_bp.route("/<int:app_id>/reject", methods=["POST"])
+def reject_application(app_id: int):
+    """Отклонение заявки договорным отделом."""
+    reason = (request.form.get("reason") or "").strip()
+    try:
+        application = ApplicationService.reject_application(app_id, reason=reason, reviewer="договорной отдел")
+        flash(f"Заявка № {application.app_number} отклонена.", "danger")
+    except Exception as e:
+        current_app.logger.error(f"Error rejecting application #{app_id}: {e}", exc_info=True)
+        flash(f"Ошибка при отклонении заявки: {str(e)}", "danger")
+
+    return redirect(url_for("internal.application_detail", app_id=app_id))
+
+
+@internal_bp.route("/<int:app_id>/reset_review", methods=["POST"])
+def reset_application_review(app_id: int):
+    """Сброс статуса заявки обратно в 'На рассмотрении'."""
+    application = Application.query.get_or_404(app_id)
+    application.status = ApplicationStatus.IN_REVIEW.value
+    application.reviewed_by = None
+    application.reviewed_at = None
+    db.session.commit()
+    flash(f"Статус заявки № {application.app_number} возвращен в «На рассмотрении».", "info")
+    return redirect(url_for("internal.application_detail", app_id=app_id))

@@ -32,6 +32,81 @@
     </div>
 </div>
 
+<!-- Панель управления решением договорного отдела -->
+<div class="detail-card" style="border-left: 5px solid {% if application.status == 'approved' %}#10b981{% elif application.status == 'correction' %}#f59e0b{% else %}#3b82f6{% endif %}; background: #ffffff; margin-bottom: 1.5rem;">
+    <div class="detail-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <h2 style="font-size: 1.2rem; display: flex; align-items: center; gap: 8px; margin: 0;">
+            <span>📋</span> Решение договорного отдела по заявке
+        </h2>
+        <span class="status-badge badge-{{ application.status }}">
+            {{ application.status_label }}
+        </span>
+    </div>
+
+    {% if application.review_comment %}
+        <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 8px; padding: 14px 18px; margin-bottom: 15px;">
+            <div style="font-weight: 700; color: #92400e; font-size: 0.9rem; margin-bottom: 4px;">
+                📝 Текущие замечания договорного отдела (видны заявителю):
+            </div>
+            <div style="color: #78350f; font-size: 0.95rem; white-space: pre-wrap;">{{ application.review_comment }}</div>
+            {% if application.reviewed_at %}
+                <div style="font-size: 0.8rem; color: #b45309; margin-top: 6px;">
+                    Указаны: {{ application.reviewed_at.strftime('%d.%m.%Y %H:%M') }} ({{ application.reviewed_by or 'договорной отдел' }})
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Основные кнопки действий -->
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            {% if application.status != 'approved' %}
+                <form method="post" action="{{ url_for('internal.approve_application', app_id=application.id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn-action-success" style="padding: 10px 22px; font-size: 0.95rem; cursor: pointer;"
+                            onclick="return confirm('Одобрить заявку № {{ application.app_number }}? Заявителю откроется возможность прикрепить подписанный скан заявления.');">
+                        ✓ Одобрить заявку
+                    </button>
+                </form>
+            {% else %}
+                <div style="color: #065f46; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                    <span>✓</span> Заявка одобрена договорным отделом. Ожидается скан от заявителя.
+                </div>
+            {% endif %}
+
+            {% if application.status in ['approved', 'correction', 'rejected'] %}
+                <form method="post" action="{{ url_for('internal.reset_application_review', app_id=application.id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn-action-outline" style="padding: 9px 16px; font-size: 0.9rem; cursor: pointer;">
+                        Вернуть статус «На рассмотрении»
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+
+        <!-- Форма возврата на доработку -->
+        <details {% if application.status == 'correction' %}open{% endif %} style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px;">
+            <summary style="font-weight: 700; color: #b45309; cursor: pointer; user-select: none;">
+                ⚠️ Отправить на доработку (вписать замечания)
+            </summary>
+            <form method="post" action="{{ url_for('internal.return_application', app_id=application.id) }}" style="margin-top: 12px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-size: 0.88rem; font-weight: 600; color: #475569; margin-bottom: 6px;">
+                        Замечания и несоответствия для заявителя:
+                    </label>
+                    <textarea name="comment" rows="3" class="form-control" 
+                              style="width: 100%; box-sizing: border-box; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 10px; font-family: inherit; font-size: 0.92rem;"
+                              placeholder="Опишите, что заявителю нужно исправить (например: неверный ИНН, опечатка в фамилии руководителя, не прикреплен диплом и т.д.)" required>{{ application.review_comment or '' }}</textarea>
+                </div>
+                <button type="submit" class="btn-action-warning" style="background: #d97706; color: #ffffff; border: none; padding: 9px 20px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                    Отправить заявку на доработку
+                </button>
+            </form>
+        </details>
+    </div>
+</div>
+
 <!-- 1. Параметры обучения и реквизиты организации -->
 <div class="detail-grid-2">
     <!-- Организация -->

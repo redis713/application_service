@@ -82,6 +82,10 @@ res_create = client.post("/apply/distant/gochs", data=valid_data, follow_redirec
 assert res_create.status_code == 302
 token = res_create.headers["Location"].split("/apply/status/")[1].split("?")[0]
 
+with app.app_context():
+    app_to_approve = Application.query.filter_by(secret_token=token).first()
+    ApplicationService.approve_application(app_to_approve.id)
+
 pdf_content = b"%PDF-1.4 test cyrillic upload"
 res_up = client.post(
     f"/apply/status/{token}",

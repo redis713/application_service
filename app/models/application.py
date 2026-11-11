@@ -24,11 +24,11 @@ class Application(db.Model):
     direction = db.Column(db.String(50), nullable=False, default=TrainingDirection.GOCHS.value)
     study_form = db.Column(db.String(50), nullable=False, default=StudyForm.DISTANT.value)
 
-    status = db.Column(db.String(50), nullable=False, default=ApplicationStatus.DRAFT.value, index=True)
+    status = db.Column(db.String(50), nullable=False, default=ApplicationStatus.IN_REVIEW.value, index=True)
 
     # Данные организации (хранятся непосредственно в заявке)
     org_full_name = db.Column(db.String(500), nullable=False)
-    org_short_name = db.Column(db.String(255), nullable=False)
+    org_short_name = db.Column(db.String(255), nullable=True)
     inn = db.Column(db.String(12), nullable=False, index=True)
     kpp = db.Column(db.String(9), nullable=True)
     ogrn = db.Column(db.String(15), nullable=False, index=True)
@@ -68,6 +68,11 @@ class Application(db.Model):
     # Заметки заявителя или методиста
     notes = db.Column(db.Text, nullable=True)
 
+    # Решение и замечания договорного отдела
+    review_comment = db.Column(db.Text, nullable=True)  # Замечания для доработки
+    reviewed_by = db.Column(db.String(100), nullable=True)  # Кто рассматривал ("договорной отдел" / ФИО)
+    reviewed_at = db.Column(db.DateTime, nullable=True)  # Дата и время рассмотрения
+
     # Связи
     listeners = db.relationship("ApplicationListener", back_populates="application", cascade="all, delete-orphan")
     attachments = db.relationship("ApplicationAttachment", back_populates="application", cascade="all, delete-orphan")
@@ -83,7 +88,7 @@ class Application(db.Model):
 
     @property
     def short_name(self) -> str:
-        return self.org_short_name
+        return self.org_short_name or self.org_full_name
 
     @property
     def organization(self):

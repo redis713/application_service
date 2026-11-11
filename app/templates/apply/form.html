@@ -283,7 +283,7 @@
                         </div>
                     </div>
 
-                    {% if direction == 'fire' %}
+                    {% if show_fire_safety_fields %}
                     <div class="fire-safety-card" style="margin: 18px 0; padding: 16px 20px; background: #fffaf0; border: 1.5px solid #fed7aa; border-radius: var(--radius-md); box-shadow: 0 1px 3px rgba(234, 88, 12, 0.08);">
                         <div style="font-weight: 700; color: #c2410c; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;">
                             <span>🔥</span>
@@ -415,7 +415,7 @@
                         </div>
                         <div class="form-group col-2 delivery-address-group {% if student_form.delivery_address.errors %}has-error{% endif %}" {% if student_form.diploma_delivery.data != 'mail' %}style="display: none;"{% endif %}>
                             {{ student_form.delivery_address.label }}
-                            {{ student_form.delivery_address(class="form-control", placeholder="Почтовый адрес для отправки удостоверения") }}
+                            {{ student_form.delivery_address(class="form-control", placeholder="Индекс, город, улица, дом, офис/квартира (например: 664003, г. Иркутск, ул. Ленина, д. 1)") }}
                             {% for err in student_form.delivery_address.errors %}<div class="error-message">{{ err }}</div>{% endfor %}
                         </div>
                     </div>
@@ -477,7 +477,7 @@ const PROGRAM_CHOICES = {{ program_choices | tojson }};
 const FIXED_PROGRAM_CODE = {{ (fixed_program.code if fixed_program else None) | tojson }};
 const FIXED_PROGRAM_TITLE = {{ (fixed_program.title if fixed_program else None) | tojson }};
 const FIXED_PROGRAM_HOURS = {{ (fixed_program.hours if fixed_program else None) | tojson }};
-const IS_FIRE_DIRECTION = {{ (direction == 'fire') | tojson }};
+const SHOW_FIRE_SAFETY_FIELDS = {{ (show_fire_safety_fields if show_fire_safety_fields is defined else (direction == 'fire')) | tojson }};
 
 const FIRE_DOCUMENT_OPTIONS = [
     { value: "", text: "Выберите документ о квалификации в области пожарной безопасности" },
@@ -782,7 +782,7 @@ function addNewStudent() {
             </div>
         </div>
 
-        ${IS_FIRE_DIRECTION ? `
+        ${SHOW_FIRE_SAFETY_FIELDS ? `
             <div class="fire-safety-card" style="margin: 18px 0; padding: 16px 20px; background: #fffaf0; border: 1.5px solid #fed7aa; border-radius: var(--radius-md); box-shadow: 0 1px 3px rgba(234, 88, 12, 0.08);">
                 <div style="font-weight: 700; color: #c2410c; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;">
                     <span>🔥</span>
@@ -899,7 +899,7 @@ function addNewStudent() {
             </div>
             <div class="form-group col-2 delivery-address-group" style="display: none;">
                 <label>Адрес почтовой доставки</label>
-                <input type="text" name="students-${sIdx}-delivery_address" class="form-control" placeholder="Почтовый адрес для отправки удостоверения">
+                <input type="text" name="students-${sIdx}-delivery_address" class="form-control" placeholder="Индекс, город, улица, дом, офис/квартира (например: 664003, г. Иркутск, ул. Ленина, д. 1)">
             </div>
         </div>
     `;
@@ -983,7 +983,7 @@ document.addEventListener("DOMContentLoaded", () => {
         handleEducationChange(sel);
     });
 
-    // 8. Подсветка незаполненного уровня образования при отправке формы
+    // 8. Подсветка незаполненного уровня образования и проверка почтового индекса при отправке формы
     const appForm = document.getElementById("application-form");
     if (appForm) {
         appForm.addEventListener("submit", (e) => {
@@ -994,6 +994,31 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (!firstInvalid) firstInvalid = sel;
                 }
             });
+
+            // Проверка наличия 6-значного индекса в адресе при доставке почтой
+            document.querySelectorAll(".student-card").forEach(card => {
+                const deliverySel = card.querySelector(".delivery-select");
+                const addrInput = card.querySelector('[name$="-delivery_address"]');
+                if (deliverySel && deliverySel.value === "mail" && addrInput) {
+                    const val = addrInput.value.trim();
+                    if (!val || !/\b\d{6}\b/.test(val)) {
+                        addrInput.closest(".form-group")?.classList.add("has-error");
+                        let errDiv = addrInput.closest(".form-group")?.querySelector(".client-error-message");
+                        if (!errDiv) {
+                            errDiv = document.createElement("div");
+                            errDiv.className = "error-message client-error-message";
+                            addrInput.parentNode.appendChild(errDiv);
+                        }
+                        errDiv.innerText = "Укажите корректный адрес с 6-значным почтовым индексом (например: 664003, г. Иркутск, ул. Ленина, д. 1)";
+                        if (!firstInvalid) firstInvalid = addrInput;
+                    } else {
+                        addrInput.closest(".form-group")?.classList.remove("has-error");
+                        const errDiv = addrInput.closest(".form-group")?.querySelector(".client-error-message");
+                        if (errDiv) errDiv.remove();
+                    }
+                }
+            });
+
             if (firstInvalid) {
                 firstInvalid.focus();
             }

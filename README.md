@@ -172,4 +172,5 @@ python tests/test_updates.py
 python tests/test_validation_fixes.py
 python tests/test_audit_fixes.py
 python tests/test_internal_portal.py
+python tests/test_contract_department_flow.py
 ```

@@ -118,6 +118,10 @@ with app.test_request_context():
     token_fire = res_fire_valid.headers["Location"].split("/apply/status/")[1].split("?")[0]
     print(f"   [OK] Заявка ПБ с указанным учреждением успешно создана! Токен: {token_fire}")
 
+    with app.app_context():
+        app_to_approve = Application.query.filter_by(secret_token=token_fire).first()
+        ApplicationService.approve_application(app_to_approve.id)
+
 
 # 4. Проверка экрана успеха (наличие ссылки для редактирования и предупреждения)
 print("\n4. Проверка карточки успеха (/apply/success/<token>):")

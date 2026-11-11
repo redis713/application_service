@@ -311,6 +311,12 @@
     border: 1px solid #bfdbfe;
 }
 
+.badge-approved {
+    background-color: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
 .badge-accepted {
     background-color: #f0fdf4;
     color: #15803d;
