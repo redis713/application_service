@@ -353,10 +353,6 @@ def edit_view(token: str):
 def status_view(token: str):
     application = Application.query.filter_by(secret_token=token).first_or_404()
 
-    # Если скан уже прикреплен и заявка окончательно передана в учебный отдел
-    if application.status in (ApplicationStatus.SUBMITTED.value, ApplicationStatus.ACCEPTED.value):
-        return redirect(url_for("apply.success_view", token=token))
-
     upload_form = ScanUploadForm()
 
     if request.method == "POST":
@@ -372,7 +368,7 @@ def status_view(token: str):
                     upload_folder=current_app.config["SCANS_FOLDER"]
                 )
                 flash("Скан заявления успешно прикреплен! Ваша заявка передана в учебный отдел на обработку.", "success")
-                return redirect(url_for("apply.success_view", token=token))
+                return redirect(url_for("apply.status_view", token=token))
             except Exception as e:
                 current_app.logger.error(f"Error attaching scan for application {token}: {e}", exc_info=True)
                 flash(f"Ошибка при загрузке скана: {str(e)}", "danger")
@@ -409,8 +405,11 @@ def download_docx(token: str):
 
 @apply_bp.route("/success/<token>")
 def success_view(token: str):
-    application = Application.query.filter_by(secret_token=token).first_or_404()
-    return render_template("apply/success.html", application=application)
+    """
+    Единая точка входа для заявителя — страница статуса.
+    Маршрут /success перенаправляет на /status, чтобы не плодить лишние ссылки.
+    """
+    return redirect(url_for("apply.status_view", token=token))
 
 
 @apply_bp.route("/scan/<token>")

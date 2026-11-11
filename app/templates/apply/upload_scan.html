@@ -10,7 +10,16 @@
         <span>1. Данные заявки</span>
     </a>
 
-    {% if application.status == 'approved' %}
+    {% if application.status in ['submitted', 'accepted'] %}
+        <div class="wizard-step completed">
+            <span class="circle">✓</span>
+            <span>2. Договорной отдел (Одобрено)</span>
+        </div>
+        <div class="wizard-step completed">
+            <span class="circle">✓</span>
+            <span>3. Скан с печатью (Прикреплен)</span>
+        </div>
+    {% elif application.status == 'approved' %}
         <div class="wizard-step completed">
             <span class="circle">✓</span>
             <span>2. Договорной отдел (Одобрено)</span>
@@ -214,9 +223,7 @@
                             <div style="font-weight: 700; color: #92400e; margin-bottom: 6px; font-size: 0.95rem;">
                                 📝 Замечания договорного отдела:
                             </div>
-                            <div style="color: #78350f; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap;">
-                                {{ application.review_comment or 'Пожалуйста, проверьте и скорректируйте реквизиты организации или сведения о слушателях.' }}
-                            </div>
+                            <div style="color: #78350f; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap;">{{ application.review_comment or 'Пожалуйста, проверьте и скорректируйте реквизиты организации или сведения о слушателях.' }}</div>
                         </div>
 
                         <div>
@@ -237,7 +244,60 @@
                 </p>
             </div>
 
-        <!-- 4. ДРУГИЕ СОСТОЯНИЯ (rejected, submitted и т.д.) -->
+        <!-- 4. СОСТОЯНИЕ: СКАН ПРИКРЕПЛЕН (submitted / accepted) -->
+        {% elif application.status in ['submitted', 'accepted'] %}
+            <div style="background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: flex-start; gap: 16px;">
+                    <span style="font-size: 2.2rem; line-height: 1;">🎉</span>
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0 0 8px 0; color: #065f46; font-size: 1.25rem;">
+                            Скан заявления успешно прикреплен! Заявка передана в учебный отдел
+                        </h3>
+                        <p style="margin: 0 0 10px 0; color: #047857; font-size: 0.95rem; line-height: 1.55;">
+                            Все необходимые документы получены. Договорной отдел согласовал заявку, а подписанный руководителем скан заявления с печатью поступил в учебный центр и находится в обработке для зачисления слушателей.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Блок с прикрепленным сканом -->
+            <div style="background: #ffffff; border: 1.5px solid #a7f3d0; border-radius: 10px; padding: 18px 22px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 1.6rem;">📎</span>
+                    <div>
+                        <strong style="color: #065f46; font-size: 0.98rem;">{{ application.signed_scan_filename or 'Подписанный скан заявления' }}</strong>
+                        <div style="color: #047857; font-size: 0.82rem; margin-top: 2px;">
+                            Загружен: {{ application.submitted_at | irkutsk_time }} (иркутское время)
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <a href="{{ url_for('apply.view_scan', token=application.secret_token) }}" target="_blank" class="btn-action-success" style="padding: 10px 18px; font-size: 0.9rem; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                        📄 Открыть скан в новой вкладке ↗
+                    </a>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;">
+                <a href="{{ url_for('apply.download_docx', token=application.secret_token) }}" class="btn-primary-action" style="padding: 12px 22px; font-size: 0.95rem;">
+                    📥 Скачать заявление (.docx)
+                </a>
+                <a href="{{ url_for('apply.edit_view', token=application.secret_token) }}" class="btn-outline-action" style="padding: 12px 22px; font-size: 0.95rem;">
+                    ✏️ Редактировать заявку
+                </a>
+                <a href="{{ url_for('main.index') }}" class="btn-outline-action" style="padding: 12px 22px; font-size: 0.95rem;">
+                    🌐 Подать еще одну заявку
+                </a>
+            </div>
+
+        <!-- 5. ДРУГИЕ СОСТОЯНИЯ (rejected) -->
+        {% elif application.status == 'rejected' %}
+            <div style="background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                <h3 style="margin: 0 0 8px 0; color: #991b1b; font-size: 1.25rem;">Заявка отклонена</h3>
+                <p style="margin: 0; color: #b91c1c; font-size: 0.95rem;">
+                    {{ application.review_comment or 'Заявка была отклонена договорным отделом.' }}
+                </p>
+            </div>
         {% else %}
             <div style="padding: 20px; text-align: center; color: var(--text-muted);">
                 Текущий статус заявки: <strong>{{ application.status_label }}</strong>.

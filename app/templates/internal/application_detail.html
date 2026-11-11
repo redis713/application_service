@@ -51,7 +51,7 @@
             <div style="color: #78350f; font-size: 0.95rem; white-space: pre-wrap;">{{ application.review_comment }}</div>
             {% if application.reviewed_at %}
                 <div style="font-size: 0.8rem; color: #b45309; margin-top: 6px;">
-                    Указаны: {{ application.reviewed_at.strftime('%d.%m.%Y %H:%M') }} ({{ application.reviewed_by or 'договорной отдел' }})
+                    Указаны: {{ application.reviewed_at | irkutsk_time }} ({{ application.reviewed_by or 'договорной отдел' }})
                 </div>
             {% endif %}
         </div>
@@ -221,11 +221,11 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
                 <div class="info-item">
                     <div class="info-label">Создана</div>
-                    <div class="info-value">{{ application.created_at.strftime('%d.%m.%Y %H:%M') if application.created_at else '—' }}</div>
+                    <div class="info-value">{{ application.created_at | irkutsk_time if application.created_at else '—' }}</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Скан загружен</div>
-                    <div class="info-value">{{ application.submitted_at.strftime('%d.%m.%Y %H:%M') if application.submitted_at else 'Не загружен' }}</div>
+                    <div class="info-value">{{ application.submitted_at | irkutsk_time if application.submitted_at else 'Не загружен' }}</div>
                 </div>
             </div>
         </div>
@@ -254,7 +254,7 @@
             <div style="flex: 1;">
                 <div style="font-weight: 700; color: #065f46;">{{ application.signed_scan_filename or 'Заявление со сканом' }}</div>
                 <div style="font-size: 0.8rem; color: #047857;">
-                    Размер: {{ scan_size_str }} | Загружен: {{ application.submitted_at.strftime('%d.%m.%Y %H:%M') if application.submitted_at else 'ранее' }}
+                    Размер: {{ scan_size_str }} | Загружен: {{ application.submitted_at | irkutsk_time if application.submitted_at else 'ранее' }}
                 </div>
             </div>
         </div>

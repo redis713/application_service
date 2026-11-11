@@ -1,6 +1,6 @@
 import io
 import os
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 from docxtpl import DocxTemplate
 from app.constants import StudyForm, TrainingDirection, DeliveryType
 
@@ -219,7 +219,8 @@ class DocxService:
         listeners_data: List[Dict[str, Any]],
         study_form: str = "distant",
         direction: str = "gochs",
-        templates_dir: str = None
+        templates_dir: str = None,
+        program_code: Optional[str] = None
     ) -> io.BytesIO:
         """
         Генерирует готовый файл .docx в памяти (io.BytesIO) на основе формы и направления обучения.
@@ -238,6 +239,29 @@ class DocxService:
             (StudyForm.OCHNO.value, TrainingDirection.SPECIALIST.value): "specialist.docx",
         }
         template_name = template_map.get((study_form, direction), "gochs-dist.docx")
+
+        # Для очно-заочной формы программы "Специалист по пожарной профилактике (250 часов)"
+        # используется специализированный шаблон без колонки о пожарном образовании
+        if study_form == StudyForm.OCHNO.value and direction == TrainingDirection.FIRE.value:
+            is_fire_250 = False
+            if program_code == "fulltime_fire_cat31":
+                is_fire_250 = True
+            else:
+                for l in (listeners_data or []):
+                    for c in l.get("courses", []):
+                        c_code = c.get("code") or c.get("program_code") or ""
+                        c_title = (c.get("title") or "").lower()
+                        c_hours = c.get("hours") or 0
+                        if c_code == "fulltime_fire_cat31" or (c_hours == 250 and "профилактик" in c_title):
+                            is_fire_250 = True
+                            break
+                    for c in l.get("student_categories", []):
+                        if c.get("category") == "fulltime_fire_cat31":
+                            is_fire_250 = True
+                            break
+            if is_fire_250:
+                template_name = "pb-ochno-250.docx"
+
         template_path = os.path.join(templates_dir, template_name)
 
         if not os.path.exists(template_path):
@@ -320,14 +344,23 @@ class DocxService:
                 "courses": courses,
             })
 
+        program_code = None
+        if application.direction == TrainingDirection.FIRE.value and application.study_form == StudyForm.OCHNO.value:
+            for l in application.listeners:
+                for c in l.courses:
+                    if c.program and (c.program.code == "fulltime_fire_cat31" or (c.program.hours == 250 and "профилактик" in (c.program.title or "").lower())):
+                        program_code = "fulltime_fire_cat31"
+                        break
+
         stream = cls.generate_docx_stream(
             org_data=org_data,
             listeners_data=listeners_data,
             study_form=application.study_form,
             direction=application.direction,
-            templates_dir=templates_dir
+            templates_dir=templates_dir,
+            program_code=program_code
         )
 
-        clean_org = (application.org_short_name or "").replace('"', '').replace("'", "").strip()
+        clean_org = (application.short_name or "").replace('"', '').replace("'", "").strip()
         download_filename = f"Заявка_{application.app_number}_{clean_org}.docx"
         return stream, download_filename

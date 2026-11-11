@@ -134,19 +134,19 @@ res_up = client.post(
     follow_redirects=False
 )
 assert res_up.status_code == 302
-assert f"/apply/success/{token_fire}" in res_up.headers["Location"]
+assert f"/apply/status/{token_fire}" in res_up.headers["Location"]
 
-res_success = client.get(f"/apply/success/{token_fire}")
+res_success = client.get(f"/apply/success/{token_fire}", follow_redirects=True)
 assert res_success.status_code == 200
 html_success = res_success.get_data(as_text=True)
 
-# Проверяем наличие всех требуемых элементов
-assert "Персональная ссылка для изменения заявки" in html_success
-assert "Настоятельно просим вас сохранить эту ссылку" in html_success
-assert "id=\"edit-link-field\"" in html_success
+# Проверяем наличие всех требуемых элементов на единой странице статуса
+assert "Ваша персональная ссылка на заявку" in html_success
+assert "Скан заявления успешно прикреплен" in html_success
+assert "id=\"status-token-link\"" in html_success
 assert f"/apply/edit/{token_fire}" in html_success
-assert "copyEditLink()" in html_success
-assert "Изменить данные заявки" in html_success
+assert "copyStatusTokenLink()" in html_success
+assert "Редактировать заявку" in html_success
 print("   [OK] На экране успеха присутствует блок с персональной ссылкой на редактирование.")
 print("   [OK] Присутствует предупреждающий текст о необходимости сохранить ссылку.")
 print("   [OK] Присутствует поле с ссылкой, кнопка копирования в буфер и кнопка перехода к редактированию.")

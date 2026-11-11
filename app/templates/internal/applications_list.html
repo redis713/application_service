@@ -119,14 +119,14 @@
                         </td>
                         <td>
                             <span style="white-space: nowrap; font-size: 0.85rem; color: #475569;">
-                                {{ app.created_at.strftime('%d.%m.%Y') if app.created_at else '—' }}
+                                {{ app.created_at | irkutsk_time('%d.%m.%Y') if app.created_at else '—' }}
                             </span>
                             <span style="display: block; font-size: 0.75rem; color: #94a3b8;">
-                                {{ app.created_at.strftime('%H:%M') if app.created_at else '' }}
+                                {{ app.created_at | irkutsk_time('%H:%M') if app.created_at else '' }}
                             </span>
                         </td>
                         <td>
-                            <span class="org-short">{{ app.org_short_name }}</span>
+                            <span class="org-short">{{ app.short_name }}</span>
                             <span class="org-sub">ИНН: {{ app.inn }}</span>
                         </td>
                         <td>

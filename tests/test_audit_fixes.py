@@ -94,7 +94,7 @@ res_up = client.post(
     follow_redirects=False
 )
 assert res_up.status_code == 302
-assert f"/apply/success/{token}" in res_up.headers["Location"]
+assert f"/apply/status/{token}" in res_up.headers["Location"]
 
 with app.app_context():
     app_saved = Application.query.filter_by(secret_token=token).first()
@@ -113,12 +113,16 @@ assert res_scan.data == pdf_content
 res_scan.close()
 print("   [OK] Эндпоинт /apply/scan/<token> возвращает файл с правильным MIME-типом application/pdf!")
 
-# 5. Проверка защиты от повторного открытия формы скана при уже поданной заявке
-print("\n5. Проверка перенаправления со /status/<token> на /success/<token> для поданной заявки:")
-res_status = client.get(f"/apply/status/{token}", follow_redirects=False)
-assert res_status.status_code == 302
-assert f"/apply/success/{token}" in res_status.headers["Location"]
-print("   [OK] Поданная заявка автоматически перенаправляется на карточку успеха!")
+# 5. Проверка единого эндпоинта /status/<token> (редирект с устаревшего /success на /status)
+print("\n5. Проверка единого адреса /status/<token> и редиректа с /success/<token>:")
+res_success_redir = client.get(f"/apply/success/{token}", follow_redirects=False)
+assert res_success_redir.status_code == 302
+assert f"/apply/status/{token}" in res_success_redir.headers["Location"]
+
+res_status_final = client.get(f"/apply/status/{token}")
+assert res_status_final.status_code == 200
+assert "Скан заявления успешно прикреплен" in res_status_final.get_data(as_text=True)
+print("   [OK] Единый эндпоинт /status/<token> корректно отображает прикрепленный скан, а /success редиректит на него!")
 
 # 6. Очистка временного файла
 if os.path.exists(app_saved.signed_scan_path):

@@ -140,8 +140,12 @@ with app.app_context():
     assert app_f250.study_form == "ochno"
     stream_f250, filename_f250 = DocxService.generate_docx_for_application(app_f250, app.config["DOCX_TEMPLATES_FOLDER"])
     assert stream_f250.getvalue()
+    # Проверяем, что в документе использован шаблон pb-ochno-250.docx (в нем 8 колонок в таблице слушателей, без пожарного образования)
+    import docx
+    rendered_doc = docx.Document(stream_f250)
+    assert len(rendered_doc.tables[0].rows[0].cells) == 8, "Таблица должна содержать ровно 8 колонок (без пожарного образования)"
     print("   [OK] Заявка на 'Специалист по пожарной профилактике (250 часов)' создана БЕЗ пожарного образования!")
-    print(f"   [OK] Успешно сгенерирован бланк Word {filename_f250} ({len(stream_f250.getvalue())} байт)")
+    print(f"   [OK] Использован новый шаблон pb-ochno-250.docx: таблица содержит 8 колонок вместо 9 ({len(stream_f250.getvalue())} байт)")
 
 # 3.2 Проверяем, что для ДРУГОЙ программы ПБ (напр. fulltime_fire_cat27) пожарное образование по-прежнему ТРЕБУЕТСЯ:
 data_fire_other = dict(data_no_short_name)
@@ -270,6 +274,39 @@ with app.app_context():
     assert app_flow.signed_scan_filename == "signed_app_stamped.pdf"
     assert os.path.exists(app_flow.signed_scan_path)
     print("   [OK] Скан успешно загружен, заявка переведена в 'submitted'!")
+
+# 4.10. Проверка отсутствия отдельной success страницы и единой ссылки status:
+res_old_success = client.get(f"/apply/success/{token_no_short}", follow_redirects=False)
+assert res_old_success.status_code == 302
+assert f"/apply/status/{token_no_short}" in res_old_success.headers["Location"]
+
+res_final_status = client.get(f"/apply/status/{token_no_short}")
+assert res_final_status.status_code == 200
+html_final = res_final_status.get_data(as_text=True)
+assert "Скан заявления успешно прикреплен" in html_final
+assert "signed_app_stamped.pdf" in html_final
+assert "Редактировать заявку" in html_final
+print("   [OK] Маршрут /apply/success перенаправляет на единый /apply/status/<token>")
+print("   [OK] На единой странице статуса отображается вся информация о прикрепленном скане")
+
+
+# -------------------------------------------------------------
+# ТЕСТ 5: Иркутское время (+8 часов)
+# -------------------------------------------------------------
+print("\n5. Проверка: Отображение времени в Иркутском часовом поясе (UTC+8):")
+
+with app.app_context():
+    from datetime import datetime, timezone
+    utc_test_dt = datetime(2026, 11, 11, 2, 0, 0, tzinfo=timezone.utc)
+    # Через Jinja filter irkutsk_time
+    rendered_time = app.jinja_env.filters["irkutsk_time"](utc_test_dt)
+    assert rendered_time == "11.11.2026 10:00", f"Ожидалось 11.11.2026 10:00, получено {rendered_time}"
+    print(f"   [OK] UTC 02:00 успешно конвертируется в Иркутское время (+8ч): {rendered_time}")
+
+    # Через свойство модели
+    app_check = Application.query.get(app_id)
+    assert app_check.created_at_local.utcoffset().total_seconds() == 8 * 3600
+    print(f"   [OK] Свойство created_at_local имеет смещение +08:00: {app_check.created_at_local}")
 
 print("\n" + "=" * 70)
 print("ВСЕ ТЕСТЫ НОВЫХ ТРЕБОВАНИЙ ДОГОВОРНОГО ОТДЕЛА УСПЕШНО ПРОЙДЕНЫ!")

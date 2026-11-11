@@ -20,6 +20,24 @@ def create_app(config_class=Config):
     from werkzeug.middleware.proxy_fix import ProxyFix
     flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
+    # Иркутский часовой пояс (UTC+8) для отображения времени в шаблонах
+    from datetime import timezone, timedelta
+    IRKUTSK_TZ = timezone(timedelta(hours=8))
+
+    @flask_app.template_filter("irkutsk_time")
+    def irkutsk_time_filter(dt, fmt="%d.%m.%Y %H:%M"):
+        if not dt:
+            return ""
+        if hasattr(dt, "tzinfo"):
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            dt = dt.astimezone(IRKUTSK_TZ)
+        elif hasattr(dt, "year") and hasattr(dt, "hour"):
+            dt = dt.replace(tzinfo=timezone.utc).astimezone(IRKUTSK_TZ)
+        if hasattr(dt, "strftime"):
+            return dt.strftime(fmt)
+        return str(dt)
+
     # Регистрация Blueprints
     from app.blueprints.main import main_bp
     from app.blueprints.apply import apply_bp

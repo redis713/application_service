@@ -1,5 +1,6 @@
 import secrets
-from datetime import datetime, timezone
+from typing import Optional
+from datetime import datetime, timezone, timedelta
 from app.extensions import db
 from app.constants import ApplicationStatus, StudyForm, TrainingDirection, DeliveryType
 
@@ -106,6 +107,35 @@ class Application(db.Model):
     @property
     def study_form_label(self) -> str:
         return StudyForm.label(self.study_form)
+
+    @staticmethod
+    def _to_irkutsk(dt: Optional[datetime]) -> Optional[datetime]:
+        if not dt:
+            return None
+        irkutsk_tz = timezone(timedelta(hours=8))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(irkutsk_tz)
+
+    @property
+    def created_at_local(self) -> Optional[datetime]:
+        """Возвращает дату и время создания в Иркутском часовом поясе (UTC+8)."""
+        return self._to_irkutsk(self.created_at)
+
+    @property
+    def submitted_at_local(self) -> Optional[datetime]:
+        """Возвращает дату и время загрузки скана в Иркутском часовом поясе (UTC+8)."""
+        return self._to_irkutsk(self.submitted_at)
+
+    @property
+    def reviewed_at_local(self) -> Optional[datetime]:
+        """Возвращает дату и время рассмотрения договорным отделом в Иркутском часовом поясе (UTC+8)."""
+        return self._to_irkutsk(self.reviewed_at)
+
+    @property
+    def updated_at_local(self) -> Optional[datetime]:
+        """Возвращает дату и время обновления в Иркутском часовом поясе (UTC+8)."""
+        return self._to_irkutsk(self.updated_at)
 
     def __repr__(self):
         return f"<Application {self.app_number} [{self.status}]: {self.org_short_name}>"
