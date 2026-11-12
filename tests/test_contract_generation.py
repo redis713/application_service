@@ -99,6 +99,8 @@ class ContractGenerationTestCase(unittest.TestCase):
 
         prog_go = Program.query.filter_by(code="fulltime_cat1").first()
         self.assertIsNotNone(prog_go)
+        self.assertEqual(prog_go.price_ochno, 7060)
+        self.assertEqual(prog_go.price_dist, 7800)
 
         import random
         r_snils1 = str(random.randint(10000000000, 99999999999))

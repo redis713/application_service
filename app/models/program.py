@@ -16,6 +16,10 @@ class Program(db.Model):
     # Форма: distant, ochno, both
     study_form = db.Column(db.String(50), nullable=False, default="both")
 
+    # Стоимость обучения (в рублях)
+    price_ochno = db.Column(db.Integer, nullable=True)
+    price_dist = db.Column(db.Integer, nullable=True)
+
     is_active = db.Column(db.Boolean, default=True, nullable=False)
 
     # Связи

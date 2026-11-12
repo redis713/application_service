@@ -411,22 +411,26 @@ class DocxService:
     def calculate_contract_price(cls, application) -> Tuple[int, str, str]:
         """
         Считает общую стоимость обучения по заявке исходя из всех слушателей,
-        их выбранных программ и цен в programs_seed.py.
+        их выбранных программ и цен в базе данных (модель Program).
         Возвращает (число, строка с пробелами-разделителями, сумма прописью).
         """
-        from app.data.programs_seed import PROGRAMS_DATA
         from num2words import num2words
 
-        programs_by_code = {p["code"]: p for p in PROGRAMS_DATA}
         is_ochno = (application.study_form == StudyForm.OCHNO.value)
 
         total = 0
         for l in (application.listeners or []):
             for c in (l.courses or []):
-                prog_code = c.program.code if c.program else None
-                prog_data = programs_by_code.get(prog_code)
-                if prog_data:
-                    price = prog_data.get("price_ochno") if is_ochno else prog_data.get("price_dist")
+                if c.program:
+                    # Основной источник - цены из базы данных (модель Program)
+                    price = c.program.price_ochno if is_ochno else c.program.price_dist
+                    if price is None:
+                        # Запасной источник из programs_seed.py на случай, если база еще не обновлена
+                        from app.data.programs_seed import PROGRAMS_DATA
+                        programs_by_code = {p["code"]: p for p in PROGRAMS_DATA}
+                        p_data = programs_by_code.get(c.program.code)
+                        if p_data:
+                            price = p_data.get("price_ochno") if is_ochno else p_data.get("price_dist")
                     if price is not None:
                         total += int(price)
 

@@ -56,6 +56,8 @@ def seed_programs():
                 hours=p_data["hours"],
                 direction=p_data["direction"],
                 study_form=p_data["study_form"],
+                price_ochno=p_data.get("price_ochno"),
+                price_dist=p_data.get("price_dist"),
                 is_active=True
             )
             db.session.add(prog)
@@ -66,5 +68,7 @@ def seed_programs():
             prog.hours = p_data["hours"]
             prog.direction = p_data["direction"]
             prog.study_form = p_data["study_form"]
+            prog.price_ochno = p_data.get("price_ochno")
+            prog.price_dist = p_data.get("price_dist")
     db.session.commit()
     return count
