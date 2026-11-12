@@ -149,20 +149,27 @@
             <!-- БЛОК СКАЧИВАНИЯ БЛАНКА -->
             <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; margin-bottom: 24px;">
                 <div>
-                    <h3 style="margin: 0 0 5px 0; color: #166534; font-size: 1.15rem;">Шаг 2. Скачайте официальный бланк заявления</h3>
+                    <h3 style="margin: 0 0 5px 0; color: #166534; font-size: 1.15rem;">Шаг 2. Скачайте официальные документы</h3>
                     <p style="margin: 0; color: #15803d; font-size: 0.9rem;">
-                        Официальный документ Word (.docx) готов к печати и подписанию
+                        Официальные документы Word (.docx) готовы к печати и подписанию
                     </p>
                 </div>
-                <a href="{{ url_for('apply.download_docx', token=application.secret_token) }}" class="btn-primary-action" id="download-link" style="padding: 12px 24px;">
-                    📥 Скачать заявление (.docx)
-                </a>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="{{ url_for('apply.download_docx', token=application.secret_token) }}" class="btn-primary-action" id="download-link" style="padding: 12px 24px;">
+                        📥 Скачать заявление (.docx)
+                    </a>
+                    {% if application.has_contract %}
+                        <a href="{{ url_for('apply.download_contract_docx', token=application.secret_token) }}" class="btn-primary-action" id="download-contract-link" style="padding: 12px 24px; background: #0284c7; border-color: #0284c7;">
+                            📄 Скачать договор (.docx)
+                        </a>
+                    {% endif %}
+                </div>
             </div>
 
             <div class="instruction-list" style="margin-bottom: 25px;">
                 <h3 style="margin-top: 0; color: var(--primary-color);">Порядок действий для завершения подачи заявки:</h3>
                 <ol>
-                    <li><strong>Скачайте и распечатайте</strong> официальное заявление на бланке выше.</li>
+                    <li><strong>Скачайте и распечатайте</strong> официальное заявление{% if application.has_contract %} и договор{% endif %} на бланках выше.</li>
                     <li><strong>Передайте на подпись:</strong> руководитель организации должен поставить личную подпись.</li>
                     <li><strong>Поставьте печать</strong> организации (при наличии).</li>
                     <li><strong>Отсканируйте</strong> подписанное заявление (формат PDF или четкое фото/скан JPG, PNG).</li>
@@ -282,6 +289,11 @@
                 <a href="{{ url_for('apply.download_docx', token=application.secret_token) }}" class="btn-primary-action" style="padding: 12px 22px; font-size: 0.95rem;">
                     📥 Скачать заявление (.docx)
                 </a>
+                {% if application.has_contract %}
+                    <a href="{{ url_for('apply.download_contract_docx', token=application.secret_token) }}" class="btn-primary-action" style="padding: 12px 22px; font-size: 0.95rem; background: #0284c7; border-color: #0284c7;">
+                        📄 Скачать договор (.docx)
+                    </a>
+                {% endif %}
                 <a href="{{ url_for('apply.edit_view', token=application.secret_token) }}" class="btn-outline-action" style="padding: 12px 22px; font-size: 0.95rem;">
                     ✏️ Редактировать заявку
                 </a>

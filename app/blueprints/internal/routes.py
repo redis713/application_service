@@ -189,6 +189,28 @@ def download_application_docx(app_id: int):
     )
 
 
+@internal_bp.route("/<int:app_id>/contract")
+def download_contract_docx(app_id: int):
+    """
+    Скачивание сгенерированного договора в формате Microsoft Word (.docx).
+    Для договорного отдела доступен всегда.
+    """
+    application = Application.query.get_or_404(app_id)
+
+    templates_dir = current_app.config["DOCX_TEMPLATES_FOLDER"]
+    stream, download_filename = DocxService.generate_contract_for_application(
+        application=application,
+        templates_dir=templates_dir
+    )
+
+    return send_file(
+        stream,
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        as_attachment=True,
+        download_name=download_filename,
+    )
+
+
 @internal_bp.route("/<int:app_id>/scan")
 def view_application_scan(app_id: int):
     """
@@ -225,14 +247,35 @@ def view_application_scan(app_id: int):
 
 @internal_bp.route("/<int:app_id>/approve", methods=["POST"])
 def approve_application(app_id: int):
-    """Одобрение заявки договорным отделом."""
+    """Одобрение заявки договорным отделом с выбором прикрепления типового договора."""
+    attach_contract = request.form.get("attach_contract") in ["1", "true", "True", True]
     try:
-        application = ApplicationService.approve_application(app_id, reviewer="договорной отдел")
-        flash(f"Заявка № {application.app_number} успешно одобрена! Теперь заявитель может загрузить подписанный скан заявления.", "success")
+        application = ApplicationService.approve_application(
+            app_id,
+            attach_contract=attach_contract,
+            reviewer="договорной отдел"
+        )
+        if attach_contract:
+            flash(f"Заявка № {application.app_number} успешно одобрена с прикреплением типового договора! Теперь заявитель может скачать договор и прикрепить подписанный скан заявления.", "success")
+        else:
+            flash(f"Заявка № {application.app_number} успешно одобрена без типового договора (ручной режим). Теперь заявитель может прикрепить скан заявления.", "success")
     except Exception as e:
         current_app.logger.error(f"Error approving application #{app_id}: {e}", exc_info=True)
         flash(f"Ошибка при одобрении заявки: {str(e)}", "danger")
 
+    return redirect(url_for("internal.application_detail", app_id=app_id))
+
+
+@internal_bp.route("/<int:app_id>/toggle_contract", methods=["POST"])
+def toggle_contract(app_id: int):
+    """Переключение статуса прикрепления типового договора для заявителя."""
+    attach = request.form.get("attach_contract") in ["1", "true", "True", True]
+    try:
+        application = ApplicationService.set_contract_attachment(app_id, attach_contract=attach)
+        status_text = "прикреплен (доступен заявителю)" if attach else "откреплен (скрыт от заявителя)"
+        flash(f"Типовой договор по заявке № {application.app_number} {status_text}.", "info")
+    except Exception as e:
+        flash(f"Ошибка при изменении статуса договора: {str(e)}", "danger")
     return redirect(url_for("internal.application_detail", app_id=app_id))
 
 

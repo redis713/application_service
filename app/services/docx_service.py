@@ -364,3 +364,326 @@ class DocxService:
         clean_org = (application.short_name or "").replace('"', '').replace("'", "").strip()
         download_filename = f"Заявка_{application.app_number}_{clean_org}.docx"
         return stream, download_filename
+
+    @classmethod
+    def get_boss_genitive_fio(cls, lastname: str, firstname: str, patronymic: str) -> str:
+        """Склоняет ФИО руководителя в родительный падеж с помощью библиотеки pytrovich."""
+        if not lastname and not firstname:
+            return ""
+        try:
+            from pytrovich.detector import PetrovichGenderDetector
+            from pytrovich.maker import PetrovichDeclinationMaker
+            from pytrovich.enums import Case, Gender, NamePart
+
+            detector = PetrovichGenderDetector()
+            maker = PetrovichDeclinationMaker()
+
+            gender = detector.detect(firstname=firstname, lastname=lastname, middlename=patronymic)
+            if gender == Gender.ANDROGYNOUS or not gender:
+                if patronymic and (patronymic.endswith("ич") or patronymic.endswith("ыч")):
+                    gender = Gender.MALE
+                elif patronymic and patronymic.endswith("на"):
+                    gender = Gender.FEMALE
+                else:
+                    gender = Gender.MALE
+
+            ln = maker.make(NamePart.LASTNAME, gender, Case.GENITIVE, lastname) if lastname else ""
+            fn = maker.make(NamePart.FIRSTNAME, gender, Case.GENITIVE, firstname) if firstname else ""
+            pn = maker.make(NamePart.MIDDLENAME, gender, Case.GENITIVE, patronymic) if patronymic else ""
+            return " ".join(filter(None, [ln, fn, pn]))
+        except Exception:
+            return " ".join(filter(None, [lastname, firstname, patronymic]))
+
+    @classmethod
+    def get_boss_initials_fio(cls, lastname: str, firstname: str, patronymic: str) -> str:
+        """Форматирует инициалы и фамилию руководителя, например: И.И. Иванов."""
+        initials = []
+        if firstname:
+            initials.append(f"{firstname[0]}.")
+        if patronymic:
+            initials.append(f"{patronymic[0]}.")
+        init_str = "".join(initials)
+        if init_str:
+            return f"{init_str} {lastname}".strip()
+        return lastname or ""
+
+    @classmethod
+    def calculate_contract_price(cls, application) -> Tuple[int, str, str]:
+        """
+        Считает общую стоимость обучения по заявке исходя из всех слушателей,
+        их выбранных программ и цен в programs_seed.py.
+        Возвращает (число, строка с пробелами-разделителями, сумма прописью).
+        """
+        from app.data.programs_seed import PROGRAMS_DATA
+        from num2words import num2words
+
+        programs_by_code = {p["code"]: p for p in PROGRAMS_DATA}
+        is_ochno = (application.study_form == StudyForm.OCHNO.value)
+
+        total = 0
+        for l in (application.listeners or []):
+            for c in (l.courses or []):
+                prog_code = c.program.code if c.program else None
+                prog_data = programs_by_code.get(prog_code)
+                if prog_data:
+                    price = prog_data.get("price_ochno") if is_ochno else prog_data.get("price_dist")
+                    if price is not None:
+                        total += int(price)
+
+        formatted_num = f"{total:,}".replace(",", " ")
+        try:
+            words = num2words(total, lang="ru")
+        except Exception:
+            words = str(total)
+
+        return total, formatted_num, words
+
+    @classmethod
+    def get_contract_template_name(cls, application) -> str:
+        """
+        Определяет имя файла шаблона договора в папке docx_templates/dogovor
+        на основе направления, формы обучения и выбранных программ/часов.
+        """
+        direction = application.direction
+        study_form = application.study_form
+
+        program_code = None
+        program_title = ""
+        hours = 0
+        is_glav_spec = False
+
+        if application.listeners:
+            for l in application.listeners:
+                for c in l.courses:
+                    if c.program:
+                        program_code = c.program.code
+                        program_title = (c.program.title or "").lower()
+                        hours = c.program.hours or 0
+                        if "главных специалистов" in program_title or program_code == "fulltime_fire_cat29":
+                            is_glav_spec = True
+                        break
+                if program_code:
+                    break
+
+        # 1. Антитеррор (16ч, distant)
+        if direction == TrainingDirection.ANTITERROR.value:
+            return "dogovor-antiterror-16h.docx"
+
+        # 2. Специалист ГО (250ч, ochno)
+        if direction == TrainingDirection.SPECIALIST.value:
+            return "dogovor-specgo-250h.docx"
+
+        # 3. Система 112 (250ч, 76ч, 40ч)
+        if direction == TrainingDirection.CALL112.value:
+            if hours == 250 or program_code == "fulltime_cat32":
+                return "dogovor-112-250h.docx"
+            elif hours == 76 or program_code == "fulltime_cat33":
+                return "dogovor-112-76h.docx"
+            elif hours == 40 or program_code == "fulltime_cat34":
+                return "dogovor-112-40h.docx"
+            return "dogovor-112-250h.docx"
+
+        # 4. ГОЧС (дистанционно: 72ч; очно: 36ч, 40ч, 72ч)
+        if direction == TrainingDirection.GOCHS.value:
+            if study_form == StudyForm.DISTANT.value:
+                return "dogovor-gochs-dist-72h.docx"
+            else:
+                if hours == 36:
+                    return "dogovor-gochs-ochno-36h.docx"
+                elif hours == 40:
+                    return "dogovor-gochs-ochno-40h.docx"
+                elif hours == 72:
+                    return "dogovor-gochs-ochno-72h.docx"
+                return "dogovor-gochs-ochno-36h.docx"
+
+        # 5. Пожарная безопасность (fire)
+        if direction == TrainingDirection.FIRE.value:
+            if study_form == StudyForm.DISTANT.value:
+                if hours == 18 or program_code == "fulltime_fire_cat30":
+                    return "dogovor-pb-dist-18h.docx"
+                elif hours == 20 or program_code == "fulltime_fire_cat28":
+                    return "dogovor-pb-dist-20h.docx"
+                elif hours == 30:
+                    if is_glav_spec:
+                        return "dogovor-pb-dist-30(gs)h.docx"
+                    else:
+                        return "dogovor-pb-dist-30h.docx"
+                return "dogovor-pb-dist-30h.docx"
+            else:
+                if hours == 250 or program_code == "fulltime_fire_cat31":
+                    return "dogovor-pb-ochno-250h.docx"
+                elif hours == 18 or program_code == "fulltime_fire_cat30":
+                    return "dogovor-pb-ochno-18h.docx"
+                elif hours == 20 or program_code == "fulltime_fire_cat28":
+                    return "dogovor-pb-ochno-20h.docx"
+                elif hours == 30:
+                    if is_glav_spec:
+                        return "dogovor-pb-ochno-30(gs)h.docx"
+                    else:
+                        return "dogovor-pb-ochno-30h.docx"
+                return "dogovor-pb-ochno-30h.docx"
+
+        return "dogovor-gochs-dist-72h.docx"
+
+    @classmethod
+    def build_contract_context(cls, application) -> Dict[str, Any]:
+        """Формирует контекст для шаблона договора."""
+        boss_genitive = cls.get_boss_genitive_fio(
+            application.boss_lastname,
+            application.boss_firstname,
+            application.boss_patronymic
+        )
+        boss_initials = cls.get_boss_initials_fio(
+            application.boss_lastname,
+            application.boss_firstname,
+            application.boss_patronymic
+        )
+        _, total_str, total_words = cls.calculate_contract_price(application)
+        kpp_line = application.kpp or "-"
+
+        table_rows = []
+        for index, l in enumerate(application.listeners, start=1):
+            p = l.person
+            fio = p.full_name
+            birth = cls._format_date(p.birthdate)
+            citizenship = p.citizenship or "РФ"
+            name_cell = f"{fio}\n\n{birth}\n\n{citizenship}"
+
+            edu_level = p.education_level or ""
+            institute = p.institute_name or ""
+            diploma_num = p.diploma_series_number or ""
+            diploma_date = cls._format_date(p.diploma_date)
+            diploma_lastname = p.diploma_lastname or ""
+            snils = p.formatted_snils or ""
+
+            if edu_level == "Неоконченное высшее (студент)":
+                edu_cell = f"{edu_level}\n\n{institute}\n\nСНИЛС: {snils}"
+            else:
+                edu_parts = [edu_level]
+                if institute:
+                    edu_parts.append(institute)
+                edu_dip_parts = []
+                if diploma_num:
+                    edu_dip_parts.append(f"диплом: {diploma_num}")
+                if diploma_date:
+                    edu_dip_parts.append(f"выдан {diploma_date}")
+                if edu_dip_parts:
+                    edu_parts.append(", ".join(edu_dip_parts))
+                dip_lastname = diploma_lastname or p.lastname or ""
+                if dip_lastname:
+                    edu_parts.append(f"Фамилия в дипломе: {dip_lastname}")
+                if snils:
+                    edu_parts.append(f"СНИЛС: {snils}")
+                edu_cell = "\n\n".join(edu_parts)
+
+            fire_doc_type = p.fire_safety_document_type
+            if fire_doc_type:
+                from app.constants import FIRE_DOCUMENT_LABELS
+                doc_title = FIRE_DOCUMENT_LABELS.get(fire_doc_type, fire_doc_type)
+                fire_inst = p.fire_institution or institute
+                f_series = p.fire_series or ""
+                f_number = p.fire_number or ""
+                f_date = cls._format_date(p.fire_date)
+                parts = []
+                if fire_inst:
+                    parts.append(fire_inst)
+                if doc_title:
+                    parts.append(doc_title)
+                num_parts = []
+                if f_series:
+                    num_parts.append(f"серия {f_series}")
+                if f_number:
+                    num_parts.append(f"№ {f_number}")
+                if f_date:
+                    num_parts.append(f"дата выдачи {f_date}")
+                if num_parts:
+                    parts.append(", ".join(num_parts))
+                pb_edu_cell = "\n\n".join(parts) if parts else "-"
+            else:
+                pb_edu_cell = "-"
+
+            position = l.position or ""
+
+            cat_titles = []
+            cat_dates = []
+            hours = 0
+            for c in l.courses:
+                if c.program:
+                    cat_titles.append(c.program.title or "")
+                    hours = c.program.hours or hours
+                s_date = cls._format_date(c.start_date)
+                e_date = cls._format_date(c.end_date)
+                cat_dates.append(f"с {s_date} по {e_date} г.")
+
+            category_cell = "\n\n".join(cat_titles)
+            date_cell = "\n\n".join(cat_dates)
+
+            table_rows.append({
+                "num": index,
+                "name": name_cell,
+                "fio": fio,
+                "education": edu_cell,
+                "pb_education": pb_edu_cell,
+                "position": position,
+                "category": category_cell,
+                "date": date_cell,
+                "hours": hours,
+                "phone": p.phone or "",
+                "email": p.email or "",
+            })
+
+        context = {
+            "organization_name": application.org_full_name,
+            "org_name": application.org_full_name,
+            "boss_fio_genitive": boss_genitive,
+            "boss_authority": application.boss_authority or "",
+            "people_kol": len(application.listeners),
+            "total_price": total_str,
+            "total_price_words": total_words,
+            "actual_address": application.actual_address,
+            "legal_address": application.legal_address,
+            "inn": application.inn,
+            "kpp": application.kpp or "-",
+            "kpp_line": kpp_line,
+            "bank_name": application.bank_name,
+            "account_number": application.account_number,
+            "bik": application.bik,
+            "ogrn": application.ogrn,
+            "phone": application.phone,
+            "email": application.email,
+            "boss_position": application.boss_position or "",
+            "boss_fio_initials": boss_initials,
+            "data": table_rows
+        }
+        return context
+
+    @classmethod
+    def generate_contract_for_application(cls, application, templates_dir: str = None) -> Tuple[io.BytesIO, str]:
+        """
+        Генерирует договор на оказание платных образовательных услуг (.docx)
+        для переданной модели Application.
+        Возвращает кортеж (BytesIO поток, рекомендуемое имя файла для скачивания).
+        """
+        if not templates_dir:
+            base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+            templates_dir = os.path.join(base_dir, "docx_templates")
+
+        template_name = cls.get_contract_template_name(application)
+        dogovor_dir = os.path.join(templates_dir, "dogovor")
+        template_path = os.path.join(dogovor_dir, template_name)
+
+        if not os.path.exists(template_path):
+            raise FileNotFoundError(f"Шаблон договора не найден: {template_path}")
+
+        context = cls.build_contract_context(application)
+
+        doc = DocxTemplate(template_path)
+        doc.render(context)
+
+        buffer = io.BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+
+        clean_org = (application.short_name or "").replace('"', '').replace("'", "").strip()
+        download_filename = f"Договор_{application.app_number}_{clean_org}.docx"
+        return buffer, download_filename

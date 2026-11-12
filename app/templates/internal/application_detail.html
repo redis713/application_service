@@ -18,8 +18,11 @@
     </div>
 
     <div class="detail-actions">
-        <a href="{{ url_for('internal.download_application_docx', app_id=application.id) }}" class="btn-action-primary" title="Сгенерировать и скачать официальный бланк в формате Word (.docx)">
+        <a href="{{ url_for('internal.download_application_docx', app_id=application.id) }}" class="btn-action-primary" title="Сгенерировать и скачать официальный бланк заявления в формате Word (.docx)">
             📥 Скачать заявку (.docx)
+        </a>
+        <a href="{{ url_for('internal.download_contract_docx', app_id=application.id) }}" class="btn-action-primary" style="background: #0284c7; border-color: #0284c7;" title="Сгенерировать и скачать договор в формате Word (.docx)">
+            📄 Скачать договор (.docx)
         </a>
         {% if application.signed_scan_path and scan_exists %}
             <a href="{{ url_for('internal.view_application_scan', app_id=application.id) }}" target="_blank" class="btn-action-success" title="Просмотреть скан-копию заявления в браузере">
@@ -59,28 +62,63 @@
 
     <div style="display: flex; flex-direction: column; gap: 16px;">
         <!-- Основные кнопки действий -->
-        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
             {% if application.status != 'approved' %}
-                <form method="post" action="{{ url_for('internal.approve_application', app_id=application.id) }}" style="display: inline;">
+                <form method="post" action="{{ url_for('internal.approve_application', app_id=application.id) }}" style="width: 100%;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn-action-success" style="padding: 10px 22px; font-size: 0.95rem; cursor: pointer;"
-                            onclick="return confirm('Одобрить заявку № {{ application.app_number }}? Заявителю откроется возможность прикрепить подписанный скан заявления.');">
-                        ✓ Одобрить заявку
-                    </button>
+                    <div style="background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; max-width: 650px;">
+                        <div style="font-weight: 700; color: #166534; font-size: 0.92rem; margin-bottom: 8px;">
+                            📄 Прикрепление типового договора для заявителя:
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #14532d; cursor: pointer; margin-bottom: 6px;">
+                            <input type="radio" name="attach_contract" value="1" checked>
+                            <span><strong>Прикрепить типовой договор</strong> (кнопка скачивания появится на странице заявителя)</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #14532d; cursor: pointer;">
+                            <input type="radio" name="attach_contract" value="0">
+                            <span><strong>Не прикреплять договор</strong> (нетиповой договор / ручной режим)</span>
+                        </label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <button type="submit" class="btn-action-success" style="padding: 10px 22px; font-size: 0.95rem; cursor: pointer;">
+                            ✓ Одобрить заявку
+                        </button>
+                    </div>
                 </form>
             {% else %}
-                <div style="color: #065f46; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                    <span>✓</span> Заявка одобрена договорным отделом. Ожидается скан от заявителя.
+                <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                    <div style="color: #065f46; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                        <span>✓</span> Заявка одобрена договорным отделом. Ожидается скан от заявителя.
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; max-width: 650px;">
+                        <span style="font-size: 0.9rem; color: #475569;">
+                            Статус типового договора для заявителя:
+                            {% if application.has_contract %}
+                                <strong style="color: #059669;">✓ Прикреплен (доступен для скачивания заявителем)</strong>
+                            {% else %}
+                                <strong style="color: #64748b;">Не прикреплен (ручной режим)</strong>
+                            {% endif %}
+                        </span>
+                        <form method="post" action="{{ url_for('internal.toggle_contract', app_id=application.id) }}" style="display: inline; margin-left: auto;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="attach_contract" value="{% if application.has_contract %}0{% else %}1{% endif %}">
+                            <button type="submit" class="btn-action-outline" style="padding: 5px 12px; font-size: 0.82rem; cursor: pointer;">
+                                {% if application.has_contract %}Открепить договор{% else %}Прикрепить договор{% endif %}
+                            </button>
+                        </form>
+                    </div>
                 </div>
             {% endif %}
 
             {% if application.status in ['approved', 'correction', 'rejected'] %}
-                <form method="post" action="{{ url_for('internal.reset_application_review', app_id=application.id) }}" style="display: inline;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn-action-outline" style="padding: 9px 16px; font-size: 0.9rem; cursor: pointer;">
-                        Вернуть статус «На рассмотрении»
-                    </button>
-                </form>
+                <div style="margin-top: 8px;">
+                    <form method="post" action="{{ url_for('internal.reset_application_review', app_id=application.id) }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn-action-outline" style="padding: 9px 16px; font-size: 0.9rem; cursor: pointer;">
+                            Вернуть статус «На рассмотрении»
+                        </button>
+                    </form>
+                </div>
             {% endif %}
         </div>
 

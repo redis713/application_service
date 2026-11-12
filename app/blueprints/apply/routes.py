@@ -498,6 +498,29 @@ def download_docx(token: str):
     )
 
 
+@apply_bp.route("/download_contract/<token>")
+def download_contract_docx(token: str):
+    """Генерирует и отдает Word (.docx) договор для скачивания заявителем (если договор прикреплен)."""
+    application = Application.query.filter_by(secret_token=token).first_or_404()
+
+    if not application.has_contract:
+        flash("Типовой договор для данной заявки не прикреплен или оформляется в индивидуальном порядке договорным отделом.", "warning")
+        return redirect(url_for("apply.status_view", token=token))
+
+    templates_dir = current_app.config["DOCX_TEMPLATES_FOLDER"]
+    stream, download_filename = DocxService.generate_contract_for_application(
+        application=application,
+        templates_dir=templates_dir
+    )
+
+    return send_file(
+        stream,
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        as_attachment=True,
+        download_name=download_filename
+    )
+
+
 @apply_bp.route("/success/<token>")
 def success_view(token: str):
     """

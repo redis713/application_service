@@ -495,14 +495,25 @@ class ApplicationService:
         return application
 
     @classmethod
-    def approve_application(cls, app_id: int, reviewer: str = "договорной отдел") -> Application:
-        """Одобряет заявку договорным отделом, открывая заявителю возможность прикрепить скан."""
+    def approve_application(cls, app_id: int, attach_contract: bool = False, reviewer: str = "договорной отдел") -> Application:
+        """Одобряет заявку договорным отделом, открывая заявителю возможность прикрепить скан, и опционально прикрепляет типовой договор."""
         application = Application.query.get(app_id)
         if not application:
             raise ValueError(f"Заявка с ID #{app_id} не найдена.")
         application.status = ApplicationStatus.APPROVED.value
+        application.has_contract = bool(attach_contract)
         application.reviewed_by = reviewer
         application.reviewed_at = datetime.now(timezone.utc)
+        db.session.commit()
+        return application
+
+    @classmethod
+    def set_contract_attachment(cls, app_id: int, attach_contract: bool) -> Application:
+        """Устанавливает или снимает флаг прикрепления типового договора для заявки."""
+        application = Application.query.get(app_id)
+        if not application:
+            raise ValueError(f"Заявка с ID #{app_id} не найдена.")
+        application.has_contract = bool(attach_contract)
         db.session.commit()
         return application
 

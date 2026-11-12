@@ -73,6 +73,7 @@ class Application(db.Model):
     review_comment = db.Column(db.Text, nullable=True)  # Замечания для доработки
     reviewed_by = db.Column(db.String(100), nullable=True)  # Кто рассматривал ("договорной отдел" / ФИО)
     reviewed_at = db.Column(db.DateTime, nullable=True)  # Дата и время рассмотрения
+    has_contract = db.Column(db.Boolean, default=False, nullable=False)  # Прикреплен ли типовой договор для заявителя
 
     # Связи
     listeners = db.relationship("ApplicationListener", back_populates="application", cascade="all, delete-orphan")
