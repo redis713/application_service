@@ -6,3 +6,4 @@ __pycache__/
 uploads/
 *.docx
 !docx_templates/*.docx
+!docx_templates/**/*.docx
