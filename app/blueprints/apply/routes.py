@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from flask import (
     render_template,
     redirect,
@@ -9,6 +10,7 @@ from flask import (
     current_app,
     abort,
 )
+from app.extensions import db
 from app.blueprints.apply import apply_bp
 from app.blueprints.apply.forms import ApplicationForm, ScanUploadForm
 from app.constants import StudyForm, TrainingDirection, ApplicationStatus
@@ -17,19 +19,21 @@ from app.models.application import Application
 from app.services.application_service import ApplicationService
 from app.services.docx_service import DocxService
 
-def get_programs_list(direction: str, study_form: str):
-    """Возвращает список моделей Program для направления и формы обучения."""
+def get_programs_list(direction: str, study_form: str, hours: Optional[int] = None):
+    """Возвращает список моделей Program для направления и формы обучения (с опциональной фильтрацией по часам)."""
     query = Program.query.filter_by(is_active=True)
     if direction in [d.value for d in TrainingDirection]:
         query = query.filter(Program.direction == direction)
     if study_form in [s.value for s in StudyForm]:
         query = query.filter(Program.study_form.in_([study_form, "both"]))
+    if hours is not None:
+        query = query.filter(Program.hours == hours)
     return query.order_by(Program.id).all()
 
 
-def get_program_choices(direction: str, study_form: str):
-    """Возвращает список доступных программ для выбора в форме с учетом направления и формы обучения."""
-    programs = get_programs_list(direction, study_form)
+def get_program_choices(direction: str, study_form: str, hours: Optional[int] = None):
+    """Возвращает список доступных программ для выбора в форме с учетом направления, формы обучения и часов."""
+    programs = get_programs_list(direction, study_form, hours=hours)
     choices = [("", "Выберите категорию обучения")]
     for p in programs:
         choices.append((p.code, f"{p.title} ({p.hours} ч.)" if p.hours else p.title))
@@ -128,13 +132,64 @@ def extract_form_data(form: ApplicationForm):
 
 @apply_bp.route("/programs/<study_form>/<direction>")
 def programs_view(study_form: str, direction: str):
-    """Страница выбора конкретной категории перед переходом к заполнению бланка."""
+    """Страница выбора конкретной категории или расчасовки перед переходом к заполнению бланка."""
     valid_forms = [StudyForm.DISTANT.value, StudyForm.OCHNO.value]
     valid_directions = [d.value for d in TrainingDirection]
 
     if study_form not in valid_forms or direction not in valid_directions:
         flash("Некорректная форма или направление обучения", "danger")
         return redirect(url_for("main.index"))
+
+    # Для очно-заочной формы ГОЧС выводим выбор расчасовки (36, 40, 72 ч.)
+    if study_form == StudyForm.OCHNO.value and direction == TrainingDirection.GOCHS.value:
+        raw_hours = (
+            db.session.query(Program.hours)
+            .filter(Program.direction == direction, Program.is_active == True)
+            .filter(Program.study_form.in_([study_form, "both"]))
+            .distinct()
+            .order_by(Program.hours)
+            .all()
+        )
+        available_hours = sorted([h[0] for h in raw_hours if h[0]])
+
+        hour_meta = {
+            36: {
+                "title": "Программы повышения квалификации (36 часов)",
+                "description": "Подготовка руководителей организаций и ОМСУ, председателей и членов КЧС и ОПБ, эвакуационных комиссий, комиссий по устойчивости (ПУФ).",
+            },
+            40: {
+                "title": "Программы повышения квалификации (40 часов)",
+                "description": "Подготовка руководителей, инструкторов и консультантов УКП, руководителей занятий по ГОЧС.",
+            },
+            72: {
+                "title": "Программы повышения квалификации (72 часа)",
+                "description": "Подготовка специалистов ЕДДС и ДДС, руководителей спасательных служб и НАСФ, преподавателей ОБЗР и БЖД, курсов ГО, работников уполномоченных органов.",
+            },
+        }
+
+        hour_groups = []
+        for h in available_hours:
+            progs = get_programs_list(direction, study_form, hours=h)
+            meta = hour_meta.get(h, {
+                "title": f"Программы повышения квалификации ({h} часов)",
+                "description": f"Программы обучения объемом {h} часов.",
+            })
+            hour_groups.append({
+                "hours": h,
+                "title": meta["title"],
+                "description": meta["description"],
+                "count": len(progs),
+                "programs": progs,
+            })
+
+        return render_template(
+            "apply/programs_hours.html",
+            study_form=study_form,
+            direction=direction,
+            study_form_label=StudyForm.label(study_form),
+            direction_label=TrainingDirection.label(direction),
+            hour_groups=hour_groups,
+        )
 
     programs = get_programs_list(direction, study_form)
     return render_template(
@@ -157,32 +212,57 @@ def form_view(study_form: str, direction: str):
         flash("Некорректная форма или направление обучения", "danger")
         return redirect(url_for("main.index"))
 
-    # Направления, где в заявке обязательно должна быть одна выбранная программа
-    needs_intermediate_selection = (
-        (study_form == StudyForm.OCHNO.value and direction == TrainingDirection.GOCHS.value)
-        or direction in [TrainingDirection.FIRE.value, TrainingDirection.CALL112.value]
-    )
-
-    category_code = request.args.get("category") or request.form.get("fixed_category_code")
-
-    # Если требуется предварительный выбор, но категория не передана в GET — перенаправляем на выбор
-    if needs_intermediate_selection and not category_code and request.method == "GET":
-        return redirect(url_for("apply.programs_view", study_form=study_form, direction=direction))
-
+    selected_hours = None
+    single_program_per_student = False
     fixed_program = None
-    if category_code:
-        fixed_program = Program.query.filter_by(code=category_code).first()
-    elif direction == TrainingDirection.ANTITERROR.value:
-        fixed_program = Program.query.filter_by(direction=direction, is_active=True).first()
-    elif direction == TrainingDirection.SPECIALIST.value:
-        fixed_program = Program.query.filter_by(direction=direction, is_active=True).first()
+
+    # Очно-заочное ГОЧС: обязательно выбирается расчасовка (36, 40, 72 ч.)
+    if study_form == StudyForm.OCHNO.value and direction == TrainingDirection.GOCHS.value:
+        raw_hours = request.args.get("hours", type=int)
+        if raw_hours is None and request.form.get("hours"):
+            try:
+                raw_hours = int(request.form.get("hours"))
+            except (ValueError, TypeError):
+                raw_hours = None
+
+        if not raw_hours and request.method == "GET":
+            return redirect(url_for("apply.programs_view", study_form=study_form, direction=direction))
+
+        valid_gochs_hours = [36, 40, 72]
+        if raw_hours not in valid_gochs_hours:
+            flash("Некорректный выбор расчасовки программы", "danger")
+            return redirect(url_for("apply.programs_view", study_form=study_form, direction=direction))
+
+        selected_hours = raw_hours
+        single_program_per_student = True
+        choices = get_program_choices(direction, study_form, hours=selected_hours)
+
+    else:
+        # Направления, где в заявке обязательно должна быть одна выбранная программа
+        needs_intermediate_selection = (
+            direction in [TrainingDirection.FIRE.value, TrainingDirection.CALL112.value]
+        )
+
+        category_code = request.args.get("category") or request.form.get("fixed_category_code")
+
+        # Если требуется предварительный выбор, но категория не передана в GET — перенаправляем на выбор
+        if needs_intermediate_selection and not category_code and request.method == "GET":
+            return redirect(url_for("apply.programs_view", study_form=study_form, direction=direction))
+
+        if category_code:
+            fixed_program = Program.query.filter_by(code=category_code).first()
+        elif direction == TrainingDirection.ANTITERROR.value:
+            fixed_program = Program.query.filter_by(direction=direction, is_active=True).first()
+        elif direction == TrainingDirection.SPECIALIST.value:
+            fixed_program = Program.query.filter_by(direction=direction, is_active=True).first()
+
+        choices = get_program_choices(direction, study_form)
+        if fixed_program:
+            fixed_tuple = (fixed_program.code, f"{fixed_program.title} ({fixed_program.hours} ч.)")
+            if fixed_tuple not in choices:
+                choices.append(fixed_tuple)
 
     form = ApplicationForm()
-    choices = get_program_choices(direction, study_form)
-    if fixed_program:
-        fixed_tuple = (fixed_program.code, f"{fixed_program.title} ({fixed_program.hours} ч.)")
-        if fixed_tuple not in choices:
-            choices.append(fixed_tuple)
 
     for student_form in form.students:
         for cat_form in student_form.student_categories:
@@ -248,6 +328,8 @@ def form_view(study_form: str, direction: str):
         direction_label=TrainingDirection.label(direction),
         program_choices=choices,
         fixed_program=fixed_program,
+        selected_hours=selected_hours,
+        single_program_per_student=single_program_per_student,
         show_fire_safety_fields=requires_fire_doc
     )
 
@@ -259,25 +341,36 @@ def edit_view(token: str):
 
     if application.status in [ApplicationStatus.ACCEPTED.value, ApplicationStatus.REJECTED.value]:
         flash(f"Заявка № {application.app_number} находится в статусе «{application.status_label}» и недоступна для изменения.", "warning")
-        return redirect(url_for("apply.success_view", token=token))
+        return redirect(url_for("apply.status_view", token=token))
 
-    choices = get_program_choices(application.direction, application.study_form)
-
-    # Определяем фиксированную программу (если заявка была создана по одной категории)
+    selected_hours = None
+    single_program_per_student = False
     fixed_program = None
-    if application.direction in [TrainingDirection.ANTITERROR.value, TrainingDirection.SPECIALIST.value]:
-        fixed_program = Program.query.filter_by(direction=application.direction, is_active=True).first()
-    elif (
-        (application.study_form == StudyForm.OCHNO.value and application.direction == TrainingDirection.GOCHS.value)
-        or application.direction in [TrainingDirection.FIRE.value, TrainingDirection.CALL112.value]
-    ):
-        if application.listeners and application.listeners[0].courses:
-            fixed_program = application.listeners[0].courses[0].program
 
-    if fixed_program:
-        fixed_tuple = (fixed_program.code, f"{fixed_program.title} ({fixed_program.hours} ч.)")
-        if fixed_tuple not in choices:
-            choices.append(fixed_tuple)
+    if application.study_form == StudyForm.OCHNO.value and application.direction == TrainingDirection.GOCHS.value:
+        # Для очно-заочного ГОЧС определяем расчасовку из программ слушателей
+        single_program_per_student = True
+        if application.listeners:
+            for l in application.listeners:
+                if l.courses and l.courses[0].program:
+                    selected_hours = l.courses[0].program.hours
+                    break
+        if selected_hours:
+            choices = get_program_choices(application.direction, application.study_form, hours=selected_hours)
+        else:
+            choices = get_program_choices(application.direction, application.study_form)
+    else:
+        choices = get_program_choices(application.direction, application.study_form)
+        if application.direction in [TrainingDirection.ANTITERROR.value, TrainingDirection.SPECIALIST.value]:
+            fixed_program = Program.query.filter_by(direction=application.direction, is_active=True).first()
+        elif application.direction in [TrainingDirection.FIRE.value, TrainingDirection.CALL112.value]:
+            if application.listeners and application.listeners[0].courses:
+                fixed_program = application.listeners[0].courses[0].program
+
+        if fixed_program:
+            fixed_tuple = (fixed_program.code, f"{fixed_program.title} ({fixed_program.hours} ч.)")
+            if fixed_tuple not in choices:
+                choices.append(fixed_tuple)
 
     requires_fire_doc = is_fire_safety_required(application.direction, application.study_form, fixed_program, None)
 
@@ -345,6 +438,8 @@ def edit_view(token: str):
         direction_label=TrainingDirection.label(application.direction),
         program_choices=choices,
         fixed_program=fixed_program,
+        selected_hours=selected_hours,
+        single_program_per_student=single_program_per_student,
         show_fire_safety_fields=requires_fire_doc
     )
 
